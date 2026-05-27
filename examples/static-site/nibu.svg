@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Nibu avatar">
+  <rect width="256" height="256" fill="#17120b" />
+  <circle cx="128" cy="104" r="56" fill="#c79b63" />
+  <path d="M48 232 Q128 154 208 232 Z" fill="#5d4026" />
+  <rect x="80" y="82" width="36" height="22" rx="8" fill="#26170e" />
+  <rect x="140" y="82" width="36" height="22" rx="8" fill="#26170e" />
+  <path d="M116 92 H140" stroke="#26170e" stroke-width="8" />
+  <path d="M96 134 Q128 124 160 134" fill="none" stroke="#26170e" stroke-width="7" />
+</svg>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Void avatar">
+  <rect width="256" height="256" fill="#070912" />
+  <path d="M48 228 L70 56 L126 20 L190 58 L212 228 Z" fill="#34208a" />
+  <path d="M76 226 L98 74 L128 46 L164 74 L188 226 Z" fill="#121021" />
+  <ellipse cx="112" cy="122" rx="12" ry="30" fill="#f8fbff" />
+  <ellipse cx="151" cy="122" rx="12" ry="30" fill="#f8fbff" />
+  <path d="M31 176 Q104 139 225 170 L216 207 Q112 176 37 222 Z" fill="#f47a22" />
+</svg>

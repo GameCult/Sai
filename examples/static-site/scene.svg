@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 720" role="img" aria-label="A simple ink-washed agora">
+  <defs>
+    <linearGradient id="sky" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#27385c" />
+      <stop offset="0.52" stop-color="#7c5d45" />
+      <stop offset="1" stop-color="#111722" />
+    </linearGradient>
+  </defs>
+  <rect width="1400" height="720" fill="url(#sky)" />
+  <path d="M0 502 Q350 410 700 500 T1400 500 V720 H0 Z" fill="#0b1119" opacity=".78" />
+  <g fill="none" stroke="#e8c48b" stroke-width="10" opacity=".55">
+    <path d="M220 472 V172 M300 472 V148 M380 472 V188" />
+    <path d="M980 472 V160 M1060 472 V136 M1140 472 V180" />
+  </g>
+  <ellipse cx="700" cy="526" rx="210" ry="70" fill="#c99a61" opacity=".45" />
+  <circle cx="700" cy="394" r="74" fill="#111722" stroke="#e8c48b" stroke-width="6" opacity=".86" />
+  <path d="M650 420 Q700 500 750 420" fill="none" stroke="#e8c48b" stroke-width="7" opacity=".72" />
+</svg>

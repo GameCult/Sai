@@ -1,0 +1,39 @@
+{
+  "name": "@gamecult/sai",
+  "version": "0.1.0",
+  "description": "Static-site Ink embeds for interactive fiction, visual novels, and cinematic story fragments.",
+  "license": "MIT",
+  "private": false,
+  "files": [
+    "dist",
+    "src",
+    "docs",
+    "examples",
+    "scripts",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": "./dist/sai.js",
+    "./sai.js": "./dist/sai.js",
+    "./sai.css": "./dist/sai.css",
+    "./ink.js": "./dist/ink.js"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs",
+    "compile:example": "inkjs-compiler examples/static-site/story.ink -o examples/static-site/story.ink.json"
+  },
+  "devDependencies": {
+    "inkjs": "^2.4.0",
+    "prettier": "^3.5.3"
+  },
+  "keywords": [
+    "ink",
+    "inkjs",
+    "interactive-fiction",
+    "visual-novel",
+    "static-site",
+    "story"
+  ]
+}

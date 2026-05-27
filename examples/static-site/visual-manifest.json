@@ -1,0 +1,24 @@
+{
+  "asset_base": "./",
+  "default_scene": "agora",
+  "scenes": {
+    "agora": {
+      "label": "Example Agora",
+      "background": "scene.svg"
+    }
+  },
+  "speakers": {
+    "Void": {
+      "name": "Void",
+      "avatar": "void.svg"
+    },
+    "Aqua": {
+      "name": "Aqua",
+      "avatar": "aqua.svg"
+    },
+    "Nibu": {
+      "name": "Nibu",
+      "avatar": "nibu.svg"
+    }
+  }
+}

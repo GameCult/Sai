@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sai Static Site Example</title>
+    <link rel="stylesheet" href="../../dist/sai.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 2rem;
+        background: #07111a;
+        color: #eef5ff;
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      }
+
+      main {
+        max-width: 70rem;
+        margin: 0 auto;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Sai Static Site Example</h1>
+      <div
+        class="sai-player"
+        data-ink-format="visual-novel"
+        data-ink-story="./story.ink.json"
+        data-visual-manifest="./visual-manifest.json"
+        data-scene-label="Example Agora"
+      ></div>
+    </main>
+    <script defer src="../../dist/sai.js"></script>
+  </body>
+</html>

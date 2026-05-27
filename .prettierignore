@@ -1,0 +1,3 @@
+examples/**/*.ink
+dist/ink.js
+src/ink.js
