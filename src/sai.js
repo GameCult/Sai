@@ -1,5 +1,9 @@
 (function () {
   const version = "0.1.0";
+  const defaultRuntimeSrc = new URL(
+    "ink.js",
+    document.currentScript?.src || document.baseURI,
+  ).href;
   let inkRuntimePromise = null;
 
   function createElement(tag, className, text) {
@@ -38,9 +42,7 @@
   }
 
   function resolveDefaultRuntimeSrc() {
-    const scriptSrc = document.currentScript && document.currentScript.src;
-    if (!scriptSrc) return "ink.js";
-    return new URL("ink.js", scriptSrc).href;
+    return defaultRuntimeSrc;
   }
 
   function resolveRuntimeSrc(container) {
