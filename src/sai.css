@@ -357,12 +357,12 @@
 
 .sai-speaker-body {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(24rem, 34%);
+  grid-template-columns: minmax(0, 1fr) minmax(22rem, 36%);
   grid-template-rows: auto minmax(0, 1fr);
   gap: 0.32rem 1rem;
   align-content: stretch;
   min-width: 0;
-  padding: 0.78rem 0.95rem;
+  padding: 0.74rem 1rem;
 }
 
 .sai-speaker-controls {
@@ -391,13 +391,13 @@
 .sai-speaker-controls .sai-choice,
 .sai-speaker-controls .sai-continue {
   min-height: 0;
-  padding: 0.24rem 0;
+  padding: 0.2rem 0;
   border: 0;
   border-radius: 0;
   background: transparent;
   color: rgba(255, 236, 207, 0.96);
-  font-size: 0.88rem;
-  line-height: 1.18;
+  font-size: 0.94rem;
+  line-height: 1.2;
   text-align: left;
 }
 
@@ -437,8 +437,8 @@
   grid-column: 1;
   margin: 0;
   color: rgba(246, 241, 226, 0.96);
-  font-size: 1.02rem;
-  line-height: 1.32;
+  font-size: 1.06rem;
+  line-height: 1.28;
   text-shadow: 0 2px 18px rgba(0, 0, 0, 0.55);
 }
 

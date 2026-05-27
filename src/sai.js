@@ -621,7 +621,7 @@
     } else if (isSpeakerPanel) {
       container.classList.add("sai-player-speaker");
       variables.hidden = !showVariables;
-      stageState.controls.append(choices, continueButton, restart);
+      stageState.controls.append(choices, continueButton);
       container.replaceChildren(status, stageState.stage, variables);
     } else {
       container.replaceChildren(
@@ -718,10 +718,20 @@
       reset();
     } catch (error) {
       status.textContent = "Ink player failed to load.";
-      const errorTarget = transcript || (stageState && stageState.sectionText);
-      errorTarget.append(
-        createElement("p", "sai-error", error.message || String(error)),
-      );
+      if (isSpeakerPanel && stageState) {
+        renderSpeakerLine(
+          stageState,
+          visualManifest,
+          error.message || String(error),
+          { speaker: "System" },
+        );
+      } else {
+        const errorTarget =
+          transcript || (stageState && stageState.sectionText);
+        errorTarget.append(
+          createElement("p", "sai-error", error.message || String(error)),
+        );
+      }
     }
   }
 
