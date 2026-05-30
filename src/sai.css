@@ -243,6 +243,10 @@
   box-shadow: 0 26px 72px rgba(0, 0, 0, 0.44);
 }
 
+.sai-speaker-stage.has-dom-cards {
+  height: clamp(520px, 74vh, 820px);
+}
+
 .sai-speaker-background,
 .sai-speaker-scrim {
   position: absolute;
@@ -292,6 +296,99 @@
 
 .sai-speaker-scene[hidden] {
   display: none;
+}
+
+.sai-dom-layer {
+  position: absolute;
+  inset: 3.6rem 1rem 9rem;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 0.9rem;
+  align-items: stretch;
+  overflow: auto;
+  padding: 0.2rem;
+}
+
+.sai-dom-layer[hidden] {
+  display: none;
+}
+
+.sai-dom-layer.is-entering {
+  animation: saiSpeakerIn 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.sai-dom-card {
+  box-sizing: border-box;
+  min-width: 0;
+  max-height: 100%;
+  overflow: auto;
+  padding: 0.95rem 1rem;
+  border: 1px solid rgba(255, 198, 120, 0.22);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(8, 12, 18, 0.78), rgba(7, 10, 15, 0.62)),
+    radial-gradient(
+      circle at 10% 0%,
+      rgba(255, 198, 120, 0.1),
+      transparent 28%
+    );
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+}
+
+.sai-dom-card-title {
+  margin: 0 0 0.55rem;
+  color: rgba(255, 198, 120, 0.96);
+  font-family: var(--sai-title-font);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.sai-dom-card-body {
+  min-width: 0;
+}
+
+.sai-dom-card-body > * {
+  margin: 0;
+}
+
+.sai-dom-card-body h1,
+.sai-dom-card-body h2,
+.sai-dom-card-body h3 {
+  margin: 0 0 0.45rem;
+  color: rgba(246, 241, 226, 0.98);
+  font-family: var(--sai-title-font);
+  line-height: 1.05;
+}
+
+.sai-dom-card-body h1 {
+  font-size: clamp(1.25rem, 2.3vw, 1.7rem);
+}
+
+.sai-dom-card-body h2,
+.sai-dom-card-body h3 {
+  font-size: clamp(1rem, 1.7vw, 1.24rem);
+}
+
+.sai-dom-card-body p,
+.sai-dom-card-body li {
+  color: rgba(226, 238, 252, 0.9);
+  font-size: 0.94rem;
+  line-height: 1.48;
+}
+
+.sai-dom-card-body a {
+  color: rgba(255, 198, 120, 0.95);
+}
+
+.sai-dom-card-body ul {
+  margin: 0.45rem 0 0;
+  padding-left: 1.1rem;
 }
 
 .sai-speaker-card {
@@ -443,6 +540,16 @@
 }
 
 @media (max-width: 760px) {
+  .sai-speaker-stage.has-dom-cards {
+    height: min(760px, calc(100vh - 2rem));
+    min-height: 620px;
+  }
+
+  .sai-dom-layer {
+    inset: 3.2rem 0.65rem 13.5rem;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .sai-speaker-card {
     grid-template-columns: 96px minmax(0, 1fr);
     height: auto;

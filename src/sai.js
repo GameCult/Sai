@@ -287,6 +287,7 @@
     const background = createElement("div", "sai-speaker-background");
     const scrim = createElement("div", "sai-speaker-scrim");
     const sceneLabel = createElement("p", "sai-speaker-scene");
+    const domLayer = createElement("div", "sai-dom-layer");
     const card = createElement("div", "sai-speaker-card");
     const avatarShell = createElement("div", "sai-speaker-avatar-shell");
     const avatar = document.createElement("img");
@@ -302,12 +303,14 @@
     avatarShell.append(avatar);
     body.append(name, line, controls);
     card.append(avatarShell, body);
-    stage.append(background, scrim, sceneLabel, card);
+    domLayer.hidden = true;
+    stage.append(background, scrim, sceneLabel, domLayer, card);
 
     return {
       stage,
       background,
       sceneLabel,
+      domLayer,
       card,
       avatar,
       name,
@@ -377,6 +380,70 @@
       return taggedAvatar;
     }
     return "";
+  }
+
+  function normaliseDomKey(value) {
+    return (value || "").trim().toLowerCase();
+  }
+
+  function resolveDomCards(manifest, metadata) {
+    const cards = manifest?.dom_cards || manifest?.domCards || {};
+    const rawKeys = metadata.dom || metadata.card || metadata.cards || "";
+    const keys = rawKeys
+      .split(",")
+      .map(normaliseDomKey)
+      .filter(Boolean);
+
+    return keys
+      .map((key) => {
+        const card = cards[key];
+        if (!card || !card.selector) return null;
+        return {
+          key,
+          selector: card.selector,
+          title: card.title || card.label || "",
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function stripDuplicateIds(element) {
+    element.removeAttribute?.("id");
+    element
+      .querySelectorAll?.("[id]")
+      .forEach((child) => child.removeAttribute("id"));
+  }
+
+  function renderDomCards(stageState, manifest, metadata) {
+    if (!stageState.domLayer) return;
+
+    const cards = resolveDomCards(manifest, metadata);
+    stageState.domLayer.replaceChildren();
+    stageState.domLayer.hidden = cards.length === 0;
+    stageState.stage.classList.toggle("has-dom-cards", cards.length > 0);
+
+    for (const card of cards) {
+      const source = document.querySelector(card.selector);
+      if (!source) continue;
+
+      const shell = createElement("section", "sai-dom-card");
+      shell.dataset.saiDomKey = card.key;
+      if (card.title) {
+        shell.append(createElement("p", "sai-dom-card-title", card.title));
+      }
+
+      const body = createElement("div", "sai-dom-card-body");
+      const clone = source.cloneNode(true);
+      stripDuplicateIds(clone);
+      clone.removeAttribute?.("data-sai-dom-source");
+      body.append(clone);
+      shell.append(body);
+      stageState.domLayer.append(shell);
+    }
+
+    stageState.domLayer.classList.remove("is-entering");
+    void stageState.domLayer.offsetWidth;
+    stageState.domLayer.classList.add("is-entering");
   }
 
   function renderSpeakerLine(stageState, manifest, text, metadata) {
@@ -538,6 +605,7 @@
 
     if (text.length > 0) {
       setSpeakerBackground(stageState, manifest, container, metadata);
+      renderDomCards(stageState, manifest, metadata);
       renderSpeakerLine(stageState, manifest, text, metadata);
       renderVariables(story, variables);
 
@@ -679,6 +747,9 @@
           stageState.backgroundSet = false;
           stageState.background.style.backgroundImage = "";
           stageState.sceneLabel.textContent = "";
+          stageState.domLayer.replaceChildren();
+          stageState.domLayer.hidden = true;
+          stageState.stage.classList.remove("has-dom-cards");
           stageState.card.classList.remove("is-entering", "is-exiting");
           stageState.avatar.removeAttribute("src");
           stageState.avatar.hidden = true;

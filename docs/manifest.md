@@ -27,6 +27,16 @@ older GameCult files already used both.
       "name": "Aqua",
       "avatar": "aqua.png"
     }
+  },
+  "dom_cards": {
+    "roadmap": {
+      "title": "Roadmap",
+      "selector": "#public-roadmap"
+    },
+    "receipts": {
+      "title": "Receipts",
+      "selector": "[data-sai-dom-source='receipts']"
+    }
   }
 }
 ```
@@ -37,10 +47,17 @@ Useful Ink tags:
 # scene: agora
 # speaker: Void
 # avatar: void
+# dom: roadmap, receipts
 ```
 
 Sai resolves assets relative to `asset_base` unless the asset is already an
 absolute URL or root-relative path.
+
+The optional `dom_cards` map lets a visual-novel line stage existing page DOM
+inside the scene. Each card points at a selector in the rendered document; Sai
+clones that element into the stage, strips duplicate `id` attributes from the
+clone, and leaves the original Quartz/HTML element in place as the canonical
+fallback.
 
 ## Cinematic Shape
 

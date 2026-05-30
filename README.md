@@ -77,15 +77,21 @@ and no stage machinery.
 ```
 
 Visual-novel mode renders one scene image, a fixed dialogue bar, speaker avatar,
-speaker name, line text, and a right-side option rail. Ink tags drive the
-speaker and scene:
+speaker name, line text, optional DOM cards, and a right-side option rail. Ink
+tags drive the speaker, scene, and staged page elements:
 
 ```ink
 # speaker: Void
 # scene: agora
 # avatar: void
+# dom: roadmap, receipts
 The world is full of systems that say one thing and reward another.
 ```
+
+The `dom` tag reads card definitions from the visual manifest and clones
+matching page DOM into the scene stage. This is for static-site tours where the
+story frames canonical Quartz/HTML content without making the story file a
+second source of truth.
 
 ### Cinematic
 
