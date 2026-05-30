@@ -77,16 +77,23 @@ and no stage machinery.
 ```
 
 Visual-novel mode renders one scene image, a fixed dialogue bar, speaker avatar,
-speaker name, line text, optional DOM cards, and a right-side option rail. Ink
-tags drive the speaker, scene, and staged page elements:
+speaker name, line text, optional character sprites, optional DOM cards, and a
+right-side option rail. Ink tags drive the speaker, scene, staged sprites, and
+staged page elements:
 
 ```ink
 # speaker: Void
 # scene: agora
 # avatar: void
+# sprite: welcome@left
+# sprites: Void.welcome@left, Aqua.listen@right
 # dom: roadmap, receipts
 The world is full of systems that say one thing and reward another.
 ```
+
+If a speaker has `sprites` in the visual manifest, Sai shows the speaker's
+default sprite automatically. Use `# sprite: none` for lines that should stage
+only background, DOM cards, and dialogue.
 
 The `dom` tag reads card definitions from the visual manifest and clones
 matching page DOM into the scene stage. This is for static-site tours where the

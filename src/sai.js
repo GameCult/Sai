@@ -287,6 +287,7 @@
     const background = createElement("div", "sai-speaker-background");
     const scrim = createElement("div", "sai-speaker-scrim");
     const sceneLabel = createElement("p", "sai-speaker-scene");
+    const spriteLayer = createElement("div", "sai-sprite-layer");
     const domLayer = createElement("div", "sai-dom-layer");
     const card = createElement("div", "sai-speaker-card");
     const avatarShell = createElement("div", "sai-speaker-avatar-shell");
@@ -303,13 +304,15 @@
     avatarShell.append(avatar);
     body.append(name, line, controls);
     card.append(avatarShell, body);
+    spriteLayer.hidden = true;
     domLayer.hidden = true;
-    stage.append(background, scrim, sceneLabel, domLayer, card);
+    stage.append(background, scrim, spriteLayer, sceneLabel, domLayer, card);
 
     return {
       stage,
       background,
       sceneLabel,
+      spriteLayer,
       domLayer,
       card,
       avatar,
@@ -319,6 +322,174 @@
       backgroundSet: false,
       backgroundKey: "",
     };
+  }
+
+  function resolveActor(manifest, actorName) {
+    if (!actorName) return null;
+    return (
+      manifest?.actors?.[actorName] ||
+      manifest?.actors?.[actorName.toLowerCase?.()] ||
+      manifest?.speakers?.[actorName] ||
+      manifest?.speakers?.[actorName.toLowerCase?.()] ||
+      null
+    );
+  }
+
+  function resolveActorKey(manifest, actorName) {
+    if (!actorName) return "";
+    const actorMaps = [manifest?.actors || {}, manifest?.speakers || {}];
+    for (const actors of actorMaps) {
+      const key = Object.keys(actors).find(
+        (candidate) => candidate.toLowerCase() === actorName.toLowerCase(),
+      );
+      if (key) return key;
+    }
+    return actorName;
+  }
+
+  function parseSpriteReference(manifest, rawReference, fallbackSpeaker) {
+    const raw = (rawReference || "").trim();
+    if (!raw) return null;
+
+    const withoutHash = raw.startsWith("#") ? raw.slice(1).trim() : raw;
+    if (["none", "clear", "off", "hide"].includes(withoutHash.toLowerCase())) {
+      return { hidden: true };
+    }
+
+    const [identityPart, positionPart] = withoutHash.split("@", 2);
+    const [subjectPart, colonPosition] = identityPart.split(":", 2);
+    const position = (positionPart || colonPosition || "").trim();
+    const actorNames = Object.keys({
+      ...(manifest?.actors || {}),
+      ...(manifest?.speakers || {}),
+    }).sort((a, b) => b.length - a.length);
+    const actorPrefix = actorNames.find((name) =>
+      subjectPart.toLowerCase().startsWith(`${name.toLowerCase()}.`),
+    );
+
+    let actor = fallbackSpeaker;
+    let expression = subjectPart.trim();
+    if (actorPrefix) {
+      actor = actorPrefix;
+      expression = subjectPart.slice(actorPrefix.length + 1).trim();
+    } else {
+      const separator = subjectPart.indexOf(".");
+      if (separator !== -1) {
+        actor = subjectPart.slice(0, separator).trim();
+        expression = subjectPart.slice(separator + 1).trim();
+      }
+    }
+
+    return {
+      actor: resolveActorKey(manifest, actor || fallbackSpeaker),
+      expression: expression || "default",
+      position: position || "",
+    };
+  }
+
+  function resolveSpriteEntry(actor, expression) {
+    if (!actor) return null;
+    const sprites = actor.sprites || {};
+    const key = expression || actor.default_sprite || actor.defaultSprite || "idle";
+    return (
+      sprites[key] ||
+      sprites[key?.toLowerCase?.()] ||
+      sprites.default ||
+      sprites.idle ||
+      actor.sprite ||
+      actor.default_sprite ||
+      actor.defaultSprite ||
+      null
+    );
+  }
+
+  function normaliseSpriteEntry(entry) {
+    if (!entry) return null;
+    if (typeof entry === "string") {
+      return { image: entry };
+    }
+    if (entry.image || entry.src) {
+      return { ...entry, image: entry.image || entry.src };
+    }
+    return null;
+  }
+
+  function resolveSpriteRequests(manifest, metadata) {
+    const speaker = metadata.speaker || "Void";
+    const rawSprites = metadata.sprites || metadata.characters || "";
+    const rawSprite = metadata.sprite || "";
+    const explicit = rawSprites || rawSprite;
+
+    const parsed = explicit
+      ? explicit
+          .split(",")
+          .map((token) => parseSpriteReference(manifest, token, speaker))
+          .filter(Boolean)
+      : [parseSpriteReference(manifest, "default", speaker)];
+
+    if (parsed.some((request) => request.hidden)) return [];
+
+    return parsed
+      .map((request, index) => {
+        const actorName = request.actor || speaker;
+        const actor = resolveActor(manifest, actorName);
+        const entry = normaliseSpriteEntry(
+          resolveSpriteEntry(actor, request.expression),
+        );
+        if (!entry?.image) return null;
+
+        return {
+          actorName,
+          expression: request.expression,
+          image: resolveManifestAsset(manifest, entry.image),
+          alt:
+            entry.alt ||
+            `${actor?.name || actorName} ${request.expression || "sprite"}`,
+          position:
+            request.position ||
+            entry.position ||
+            actor?.position ||
+            (parsed.length === 1 ? "center" : index === 0 ? "left" : "right"),
+          scale: entry.scale || actor?.sprite_scale || actor?.spriteScale || 1,
+          offsetX: entry.offset_x || entry.offsetX || 0,
+          offsetY: entry.offset_y || entry.offsetY || 0,
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function renderSpeakerSprites(stageState, manifest, metadata) {
+    if (!stageState.spriteLayer) return;
+
+    const sprites = resolveSpriteRequests(manifest, metadata);
+    stageState.spriteLayer.replaceChildren();
+    stageState.spriteLayer.hidden = sprites.length === 0;
+    stageState.stage.classList.toggle("has-sprites", sprites.length > 0);
+
+    for (const sprite of sprites) {
+      const figure = createElement("figure", "sai-sprite");
+      const image = document.createElement("img");
+      const position = sprite.position.toLowerCase().replace(/[^a-z0-9_-]/g, "");
+
+      figure.dataset.saiActor = sprite.actorName;
+      figure.dataset.saiExpression = sprite.expression || "default";
+      figure.dataset.saiPosition = position || "center";
+      figure.style.setProperty("--sai-sprite-scale", String(sprite.scale));
+      figure.style.setProperty("--sai-sprite-offset-x", `${sprite.offsetX}px`);
+      figure.style.setProperty("--sai-sprite-offset-y", `${sprite.offsetY}px`);
+
+      image.className = "sai-sprite-image";
+      image.src = sprite.image;
+      image.alt = sprite.alt;
+      image.loading = "lazy";
+      image.decoding = "async";
+      figure.append(image);
+      stageState.spriteLayer.append(figure);
+    }
+
+    stageState.spriteLayer.classList.remove("is-entering");
+    void stageState.spriteLayer.offsetWidth;
+    stageState.spriteLayer.classList.add("is-entering");
   }
 
   function setSpeakerBackground(stageState, manifest, container, metadata) {
@@ -605,6 +776,7 @@
 
     if (text.length > 0) {
       setSpeakerBackground(stageState, manifest, container, metadata);
+      renderSpeakerSprites(stageState, manifest, metadata);
       renderDomCards(stageState, manifest, metadata);
       renderSpeakerLine(stageState, manifest, text, metadata);
       renderVariables(story, variables);
@@ -747,9 +919,11 @@
           stageState.backgroundSet = false;
           stageState.background.style.backgroundImage = "";
           stageState.sceneLabel.textContent = "";
+          stageState.spriteLayer.replaceChildren();
+          stageState.spriteLayer.hidden = true;
           stageState.domLayer.replaceChildren();
           stageState.domLayer.hidden = true;
-          stageState.stage.classList.remove("has-dom-cards");
+          stageState.stage.classList.remove("has-dom-cards", "has-sprites");
           stageState.card.classList.remove("is-entering", "is-exiting");
           stageState.avatar.removeAttribute("src");
           stageState.avatar.hidden = true;

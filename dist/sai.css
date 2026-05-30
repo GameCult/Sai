@@ -298,10 +298,77 @@
   display: none;
 }
 
+.sai-sprite-layer {
+  position: absolute;
+  inset: 0 0 128px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.sai-sprite-layer[hidden] {
+  display: none;
+}
+
+.sai-sprite-layer.is-entering .sai-sprite {
+  animation: saiSpriteIn 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.sai-sprite {
+  position: absolute;
+  bottom: clamp(0.3rem, 2vw, 1.4rem);
+  left: 50%;
+  display: grid;
+  width: min(34vw, 18rem);
+  max-width: 42%;
+  min-width: 9rem;
+  margin: 0;
+  transform: translateX(-50%)
+    translate(
+      var(--sai-sprite-offset-x, 0),
+      var(--sai-sprite-offset-y, 0)
+    )
+    scale(var(--sai-sprite-scale, 1));
+  transform-origin: bottom center;
+  filter: drop-shadow(0 1.2rem 1.8rem rgba(0, 0, 0, 0.55));
+}
+
+.sai-sprite[data-sai-position="left"] {
+  left: 22%;
+}
+
+.sai-sprite[data-sai-position="midleft"],
+.sai-sprite[data-sai-position="centerleft"] {
+  left: 34%;
+}
+
+.sai-sprite[data-sai-position="right"] {
+  left: 78%;
+}
+
+.sai-sprite[data-sai-position="midright"],
+.sai-sprite[data-sai-position="centerright"] {
+  left: 66%;
+}
+
+.sai-sprite[data-sai-position="farleft"] {
+  left: 12%;
+}
+
+.sai-sprite[data-sai-position="farright"] {
+  left: 88%;
+}
+
+.sai-sprite-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
 .sai-dom-layer {
   position: absolute;
   inset: 3.6rem 1rem 9rem;
-  z-index: 1;
+  z-index: 2;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
   gap: 0.9rem;
@@ -397,7 +464,7 @@
   right: 0;
   bottom: 0;
   left: 0;
-  z-index: 1;
+  z-index: 3;
   display: grid;
   grid-template-columns: 128px minmax(0, 1fr);
   align-items: stretch;
@@ -550,6 +617,26 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .sai-sprite-layer {
+    bottom: 13rem;
+  }
+
+  .sai-sprite {
+    width: min(42vw, 12rem);
+    min-width: 7.5rem;
+    max-width: 48%;
+  }
+
+  .sai-sprite[data-sai-position="left"],
+  .sai-sprite[data-sai-position="farleft"] {
+    left: 25%;
+  }
+
+  .sai-sprite[data-sai-position="right"],
+  .sai-sprite[data-sai-position="farright"] {
+    left: 75%;
+  }
+
   .sai-speaker-card {
     grid-template-columns: 96px minmax(0, 1fr);
     height: auto;
@@ -625,4 +712,62 @@
 .sai-continue[hidden],
 .sai-variables[hidden] {
   display: none;
+}
+
+@keyframes saiTextIn {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes saiTextOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(0.45rem);
+  }
+}
+
+@keyframes saiSpeakerIn {
+  from {
+    opacity: 0;
+    transform: translateY(0.7rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes saiSpriteIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%)
+      translate(
+        var(--sai-sprite-offset-x, 0),
+        calc(var(--sai-sprite-offset-y, 0) + 1.2rem)
+      )
+      scale(calc(var(--sai-sprite-scale, 1) * 0.98));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%)
+      translate(
+        var(--sai-sprite-offset-x, 0),
+        var(--sai-sprite-offset-y, 0)
+      )
+      scale(var(--sai-sprite-scale, 1));
+  }
 }

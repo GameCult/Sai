@@ -10,15 +10,52 @@
   "speakers": {
     "Void": {
       "name": "Void",
-      "avatar": "void.svg"
+      "avatar": "void.svg",
+      "default_sprite": "idle",
+      "sprites": {
+        "idle": {
+          "image": "void.svg",
+          "position": "left",
+          "scale": 1.1
+        },
+        "welcome": {
+          "image": "void.svg",
+          "position": "left",
+          "scale": 1.15
+        }
+      }
     },
     "Aqua": {
       "name": "Aqua",
-      "avatar": "aqua.svg"
+      "avatar": "aqua.svg",
+      "default_sprite": "idle",
+      "sprites": {
+        "idle": {
+          "image": "aqua.svg",
+          "position": "right"
+        },
+        "listen": {
+          "image": "aqua.svg",
+          "position": "right",
+          "scale": 1.08
+        }
+      }
     },
     "Nibu": {
       "name": "Nibu",
-      "avatar": "nibu.svg"
+      "avatar": "nibu.svg",
+      "default_sprite": "idle",
+      "sprites": {
+        "idle": {
+          "image": "nibu.svg",
+          "position": "right"
+        },
+        "sharp": {
+          "image": "nibu.svg",
+          "position": "right",
+          "scale": 1.08
+        }
+      }
     }
   }
 }
