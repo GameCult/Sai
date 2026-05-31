@@ -625,31 +625,41 @@
 
 .sai-speaker-body {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(22rem, 36%);
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
-  gap: 0.32rem 1rem;
+  gap: 0.32rem;
   align-content: stretch;
   min-width: 0;
   padding: 0.74rem 1rem;
 }
 
 .sai-speaker-controls {
-  grid-row: 1 / span 2;
-  grid-column: 2;
-  display: grid;
-  grid-auto-rows: minmax(0, 1fr);
-  gap: 0.15rem;
-  align-items: stretch;
-  align-self: stretch;
-  margin-top: 0;
-  padding-left: 0.85rem;
-  border-left: 1px solid rgba(255, 198, 120, 0.18);
+  position: absolute;
+  right: 1rem;
+  bottom: calc(128px + 0.55rem);
+  left: clamp(12rem, 42vw, 58rem);
+  z-index: 6;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: flex-end;
+  justify-content: flex-end;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  pointer-events: none;
 }
 
 .sai-speaker-controls .sai-choices {
-  width: 100%;
-  grid-template-columns: 1fr;
-  gap: 0.15rem;
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: flex-end;
+  width: auto;
+  max-width: 100%;
+  pointer-events: auto;
 }
 
 .sai-speaker-controls .sai-choices:empty {
@@ -658,15 +668,21 @@
 
 .sai-speaker-controls .sai-choice,
 .sai-speaker-controls .sai-continue {
-  min-height: 0;
-  padding: 0.2rem 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
+  min-height: 2rem;
+  max-width: min(22rem, 100%);
+  padding: 0.38rem 0.58rem;
+  border: 1px solid rgba(255, 198, 120, 0.2);
+  border-radius: 6px;
+  background: rgba(4, 7, 11, 0.58);
   color: rgba(255, 236, 207, 0.96);
-  font-size: 0.94rem;
-  line-height: 1.2;
+  font-size: 0.82rem;
+  line-height: 1.15;
   text-align: left;
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  pointer-events: auto;
 }
 
 .sai-speaker-controls .sai-restart {
@@ -675,19 +691,20 @@
 
 .sai-speaker-controls .sai-continue {
   justify-self: auto;
-  align-self: stretch;
+  align-self: flex-end;
   font-family: var(--sai-body-font);
   letter-spacing: 0;
   text-transform: none;
+  white-space: nowrap;
 }
 
 .sai-speaker-controls .sai-choice:hover,
 .sai-speaker-controls .sai-choice:focus-visible,
 .sai-speaker-controls .sai-continue:hover,
 .sai-speaker-controls .sai-continue:focus-visible {
-  background: transparent;
+  background: rgba(255, 198, 120, 0.12);
   color: rgba(255, 198, 120, 1);
-  transform: translateX(2px);
+  transform: translateY(-1px);
 }
 
 .sai-speaker-name {
@@ -769,14 +786,22 @@
   }
 
   .sai-speaker-controls {
-    grid-row: auto;
-    grid-column: 1;
-    padding-left: 0;
-    border-left: 0;
+    right: 0.65rem;
+    bottom: calc(128px + 0.5rem);
+    left: 0.65rem;
+    max-height: 8rem;
+    overflow: auto;
+    justify-content: center;
   }
 
   .sai-speaker-controls .sai-choices {
-    grid-template-columns: 1fr;
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  .sai-speaker-controls .sai-choice,
+  .sai-speaker-controls .sai-continue {
+    flex: 1 1 min(100%, 13rem);
   }
 }
 

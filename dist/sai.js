@@ -303,7 +303,7 @@
     avatar.decoding = "async";
 
     avatarShell.append(avatar);
-    body.append(name, line, controls);
+    body.append(name, line);
     card.append(avatarShell, body);
     graphLayer.hidden = true;
     spriteLayer.hidden = true;
@@ -315,6 +315,7 @@
       spriteLayer,
       sceneLabel,
       domLayer,
+      controls,
       card,
     );
 
