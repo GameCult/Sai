@@ -647,11 +647,19 @@
       .toLowerCase();
   }
 
+  function choiceTargetPath(choice) {
+    const target = choice?.targetPath;
+    if (!target) return "";
+    if (typeof target.componentsString === "string") return target.componentsString;
+    if (typeof target.toString === "function") return target.toString();
+    return String(target);
+  }
+
   function availableTargets(story) {
     return new Set(
       story.currentChoices
         .map((choice) => {
-          const target = choice?.targetPath?.componentsString;
+          const target = choiceTargetPath(choice);
           return typeof target === "string" ? target.toLowerCase() : "";
         })
         .filter(Boolean),
@@ -820,7 +828,7 @@
 
     const lowerTarget = target.toLowerCase();
     const choiceIndex = story.currentChoices.findIndex((choice) => {
-      const path = choice?.targetPath?.componentsString;
+      const path = choiceTargetPath(choice);
       return typeof path === "string" && path.toLowerCase() === lowerTarget;
     });
     if (choiceIndex !== -1) {
