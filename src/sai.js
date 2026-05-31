@@ -869,6 +869,16 @@
       padding: Number(
         graph?.focus_distortion_padding || graph?.focusDistortionPadding || 26,
       ),
+      cursorRadius: Number(
+        graph?.focus_distortion_cursor_radius ||
+          graph?.focusDistortionCursorRadius ||
+          Math.min(viewport.width, viewport.height) * 0.17,
+      ),
+      cursorDeadZone: Number(
+        graph?.focus_distortion_cursor_dead_zone ||
+          graph?.focusDistortionCursorDeadZone ||
+          Math.min(viewport.width, viewport.height) * 0.06,
+      ),
     };
   }
 
@@ -880,15 +890,23 @@
     };
   }
 
-  function distortGraphPoint(point, centroid, viewport, graph) {
-    const { radius, strength, padding } = graphDistortionSettings(graph, viewport);
+  function distortGraphPoint(point, centroid, cursorPoint, viewport, graph) {
+    const { radius, strength, padding, cursorRadius, cursorDeadZone } =
+      graphDistortionSettings(graph, viewport);
     const dx = point.x - centroid.x;
     const dy = point.y - centroid.y;
     const distance = Math.hypot(dx, dy);
     if (distance < 0.0001) return { ...point };
 
     const falloff = 1 - smoothstep(radius * 0.12, radius, distance);
-    const push = radius * strength * falloff * (1 - Math.min(distance / radius, 1) * 0.32);
+    const cursorDistance = Math.hypot(point.x - cursorPoint.x, point.y - cursorPoint.y);
+    const cursorTaper = smoothstep(cursorDeadZone, cursorRadius, cursorDistance);
+    const push =
+      radius *
+      strength *
+      falloff *
+      cursorTaper *
+      (1 - Math.min(distance / radius, 1) * 0.32);
     const x = point.x + (dx / distance) * push;
     const y = point.y + (dy / distance) * push;
     return {
@@ -904,6 +922,7 @@
       const distorted = distortGraphPoint(
         { x: item.node.viewX, y: item.node.viewY },
         focus,
+        cursorPoint,
         viewport,
         graph,
       );
@@ -936,7 +955,18 @@
     }
   }
 
-  function graphFocusFromEvent(svg, viewport, event) {
+  function graphFocusFromEvent(svg, viewport, event, nodeElementById) {
+    const targetNode = event.target?.closest?.(".sai-graph-node");
+    const targetItem = targetNode?.dataset?.saiGraphNode
+      ? nodeElementById.get(targetNode.dataset.saiGraphNode)
+      : null;
+    if (targetItem) {
+      return {
+        x: targetItem.node.viewX,
+        y: targetItem.node.viewY,
+      };
+    }
+
     const bounds = svg.getBoundingClientRect();
     return {
       x: ((event.clientX - bounds.left) / Math.max(1, bounds.width)) * viewport.width,
@@ -1109,7 +1139,7 @@
         edgeElements,
         viewport,
         graph,
-        graphFocusFromEvent(svg, viewport, event),
+        graphFocusFromEvent(svg, viewport, event, nodeElementById),
         activePoint,
       );
     });
