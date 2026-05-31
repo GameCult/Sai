@@ -247,6 +247,10 @@
   height: clamp(520px, 74vh, 820px);
 }
 
+.sai-speaker-stage.has-sprites.has-dom-cards {
+  height: clamp(620px, 78vh, 860px);
+}
+
 .sai-speaker-background,
 .sai-speaker-scrim {
   position: absolute;
@@ -375,6 +379,19 @@
   align-items: stretch;
   overflow: auto;
   padding: 0.2rem;
+}
+
+.sai-speaker-stage.has-sprites.has-dom-cards .sai-dom-layer {
+  inset: 3.6rem 1rem 44%;
+  align-items: start;
+}
+
+.sai-speaker-stage.has-sprites.has-dom-cards .sai-dom-card {
+  max-height: 100%;
+}
+
+.sai-speaker-stage.has-sprites.has-dom-cards .sai-sprite {
+  bottom: clamp(0.8rem, 3vw, 2.6rem);
 }
 
 .sai-dom-layer[hidden] {
@@ -615,6 +632,10 @@
   .sai-dom-layer {
     inset: 3.2rem 0.65rem 13.5rem;
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sai-speaker-stage.has-sprites.has-dom-cards .sai-dom-layer {
+    inset: 3.2rem 0.65rem 50%;
   }
 
   .sai-sprite-layer {
