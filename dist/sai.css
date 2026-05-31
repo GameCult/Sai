@@ -315,10 +315,14 @@
 
 .sai-graph-layer svg {
   display: block;
-  width: min(48rem, 44vw);
+  width: min(48rem, 46vw);
   height: min(28rem, 52vh);
   overflow: visible;
   pointer-events: auto;
+}
+
+.sai-speaker-stage.has-adventure-graph .sai-dom-layer {
+  left: calc(min(48rem, 46vw) + 2rem);
 }
 
 .sai-graph-edges line {
@@ -724,6 +728,11 @@
   .sai-graph-layer svg {
     width: min(100%, 34rem);
     height: min(44vh, 22rem);
+  }
+
+  .sai-speaker-stage.has-adventure-graph .sai-dom-layer {
+    left: 0.65rem;
+    top: calc(3.2rem + min(44vh, 22rem) + 0.75rem);
   }
 
   .sai-speaker-stage.has-sprites.has-dom-cards .sai-dom-layer {
