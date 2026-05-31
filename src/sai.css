@@ -305,7 +305,7 @@
 .sai-graph-layer {
   position: absolute;
   inset: 3.2rem 1rem 9rem;
-  z-index: 2;
+  z-index: 4;
   pointer-events: none;
 }
 
