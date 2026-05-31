@@ -17,6 +17,7 @@
     ".": "./dist/sai.js",
     "./sai.js": "./dist/sai.js",
     "./sai.css": "./dist/sai.css",
+    "./eve.js": "./dist/eve.js",
     "./ink.js": "./dist/ink.js"
   },
   "scripts": {

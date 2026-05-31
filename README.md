@@ -144,6 +144,16 @@ that with `data-ink-runtime`, `data-sai-runtime`, or `window.Sai.runtimeSrc`.
 
 See [docs/manifest.md](docs/manifest.md).
 
+## Eve Surface Module
+
+Sai also ships `eve.js`, a portable projection module for Eve/CultMesh clients.
+It turns Sai visual-novel state into a retained `gamecult.eve.surface.v1`
+component tree instead of browser DOM. Browser, iOS, Android, Direct2D, and
+future renderers can consume the same tree and send back `story.*` or
+`style.patch` commands.
+
+See [docs/eve.md](docs/eve.md).
+
 ## Development
 
 ```powershell
@@ -168,6 +178,7 @@ Sai owns:
 - browser-side Ink loading through `inkjs`
 - player DOM and mode rendering
 - visual manifest interpretation
+- Eve surface projection for portable renderers
 - default CSS and theme variables
 - static-site auto-init
 
@@ -175,6 +186,7 @@ Sai does not own:
 
 - authoring Ink
 - compiling `.ink` to `.ink.json`
+- Eve/CultMesh transport or provider command acceptance
 - Quartz page chrome
 - GameCult-specific assets, lore, or characters
 - a full VN/game engine loop

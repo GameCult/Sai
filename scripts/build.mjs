@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 const root = new URL("..", import.meta.url);
-const files = ["sai.js", "sai.css", "ink.js"];
+const files = ["sai.js", "sai.css", "ink.js", "eve.js"];
 
 await fs.mkdir(new URL("dist/", root), { recursive: true });
 
