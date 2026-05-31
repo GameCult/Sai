@@ -857,9 +857,58 @@
     return Number(node.weight || 1) <= 0.7 ? 10.5 : 12.5;
   }
 
-  function applyGraphAttention(nodeElements, viewport, focus) {
+  function graphDistortionSettings(graph, viewport) {
+    const defaultRadius = Math.min(viewport.width, viewport.height) * 0.52;
+    return {
+      radius: Number(
+        graph?.focus_distortion_radius || graph?.focusDistortionRadius || defaultRadius,
+      ),
+      strength: Number(
+        graph?.focus_distortion_strength || graph?.focusDistortionStrength || 0.24,
+      ),
+      padding: Number(
+        graph?.focus_distortion_padding || graph?.focusDistortionPadding || 26,
+      ),
+    };
+  }
+
+  function explorationCentroid(activePoint, cursorPoint) {
+    if (!activePoint) return cursorPoint;
+    return {
+      x: (activePoint.x + cursorPoint.x) / 2,
+      y: (activePoint.y + cursorPoint.y) / 2,
+    };
+  }
+
+  function distortGraphPoint(point, centroid, viewport, graph) {
+    const { radius, strength, padding } = graphDistortionSettings(graph, viewport);
+    const dx = point.x - centroid.x;
+    const dy = point.y - centroid.y;
+    const distance = Math.hypot(dx, dy);
+    if (distance < 0.0001) return { ...point };
+
+    const falloff = 1 - smoothstep(radius * 0.12, radius, distance);
+    const push = radius * strength * falloff * (1 - Math.min(distance / radius, 1) * 0.32);
+    const x = point.x + (dx / distance) * push;
+    const y = point.y + (dy / distance) * push;
+    return {
+      x: clamp(x, padding, viewport.width - padding),
+      y: clamp(y, padding, viewport.height - padding),
+    };
+  }
+
+  function applyGraphAttention(nodeElements, edgeElements, viewport, graph, cursorPoint, activePoint) {
+    const focus = explorationCentroid(activePoint, cursorPoint);
     const radius = Math.min(viewport.width, viewport.height);
     for (const item of nodeElements) {
+      const distorted = distortGraphPoint(
+        { x: item.node.viewX, y: item.node.viewY },
+        focus,
+        viewport,
+        graph,
+      );
+      item.distortedX = distorted.x;
+      item.distortedY = distorted.y;
       const distance = Math.hypot(item.node.viewX - focus.x, item.node.viewY - focus.y);
       const proximity = 1 - smoothstep(radius * 0.1, radius * 0.48, distance);
       const routeBoost =
@@ -873,10 +922,17 @@
       const scale = lerp(minScale, maxScale, attention);
       item.group.setAttribute(
         "transform",
-        `translate(${item.node.viewX} ${item.node.viewY}) scale(${scale})`,
+        `translate(${distorted.x} ${distorted.y}) scale(${scale})`,
       );
       item.group.style.opacity = String(lerp(0.54, 1, attention));
       item.text.style.opacity = String(smoothstep(0.22, 0.62, attention));
+    }
+
+    for (const edge of edgeElements) {
+      edge.line.setAttribute("x1", String(edge.source.distortedX));
+      edge.line.setAttribute("y1", String(edge.source.distortedY));
+      edge.line.setAttribute("x2", String(edge.target.distortedX));
+      edge.line.setAttribute("y2", String(edge.target.distortedY));
     }
   }
 
@@ -917,9 +973,14 @@
     const nodes = projectGraphNodes(stageState.graphLayout || graph.nodes || [], graph);
     if (nodes.length === 0) return;
 
-    const nodeById = new Map(nodes.map((node) => [node.id, node]));
     const current = currentStoryKnot(metadata);
     const available = availableTargets(story);
+    const activeNode = nodes.find((node) => graphNodeKey(node) === current);
+    const activePoint = activeNode ? { x: activeNode.viewX, y: activeNode.viewY } : null;
+    const centerPoint = activePoint || {
+      x: viewport.width / 2,
+      y: viewport.height / 2,
+    };
     const visited = new Set(
       nodes
         .filter((node) => {
@@ -939,22 +1000,12 @@
 
     const edgeGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
     edgeGroup.setAttribute("class", "sai-graph-edges");
-    for (const edge of graph.edges || []) {
-      const source = nodeById.get(edge.source ?? edge.from);
-      const target = nodeById.get(edge.target ?? edge.to);
-      if (!source || !target) continue;
-      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-      line.setAttribute("x1", String(source.viewX));
-      line.setAttribute("y1", String(source.viewY));
-      line.setAttribute("x2", String(target.viewX));
-      line.setAttribute("y2", String(target.viewY));
-      edgeGroup.append(line);
-    }
     svg.append(edgeGroup);
 
     const nodeGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
     nodeGroup.setAttribute("class", "sai-graph-nodes");
     const nodeElements = [];
+    const edgeElements = [];
     for (const node of nodes) {
       const target = node.target || node.knot || node.id;
       const key = graphNodeKey(node);
@@ -982,7 +1033,13 @@
       const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
       title.textContent = node.label || node.id;
       group.append(title, circle, text);
-      nodeElements.push({ group, node, text });
+      nodeElements.push({
+        group,
+        node,
+        text,
+        distortedX: node.viewX,
+        distortedY: node.viewY,
+      });
 
       const activate = () => {
         if (!chooseStoryPath(story, target)) return;
@@ -995,36 +1052,76 @@
         activate();
       });
       group.addEventListener("pointerenter", () => {
-        applyGraphAttention(nodeElements, viewport, {
-          x: node.viewX,
-          y: node.viewY,
-        });
+        applyGraphAttention(
+          nodeElements,
+          edgeElements,
+          viewport,
+          graph,
+          {
+            x: node.viewX,
+            y: node.viewY,
+          },
+          activePoint,
+        );
       });
       group.addEventListener("focus", () => {
-        applyGraphAttention(nodeElements, viewport, {
-          x: node.viewX,
-          y: node.viewY,
-        });
+        applyGraphAttention(
+          nodeElements,
+          edgeElements,
+          viewport,
+          graph,
+          {
+            x: node.viewX,
+            y: node.viewY,
+          },
+          activePoint,
+        );
       });
       nodeGroup.append(group);
     }
     svg.append(nodeGroup);
-    applyGraphAttention(nodeElements, viewport, {
-      x: viewport.width / 2,
-      y: viewport.height / 2,
-    });
+
+    const nodeElementById = new Map(nodeElements.map((item) => [item.node.id, item]));
+    for (const edge of graph.edges || []) {
+      const source = nodeElementById.get(edge.source ?? edge.from);
+      const target = nodeElementById.get(edge.target ?? edge.to);
+      if (!source || !target) continue;
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", String(source.distortedX));
+      line.setAttribute("y1", String(source.distortedY));
+      line.setAttribute("x2", String(target.distortedX));
+      line.setAttribute("y2", String(target.distortedY));
+      edgeGroup.append(line);
+      edgeElements.push({ line, source, target });
+    }
+
+    applyGraphAttention(
+      nodeElements,
+      edgeElements,
+      viewport,
+      graph,
+      centerPoint,
+      activePoint,
+    );
     svg.addEventListener("pointermove", (event) => {
       applyGraphAttention(
         nodeElements,
+        edgeElements,
         viewport,
+        graph,
         graphFocusFromEvent(svg, viewport, event),
+        activePoint,
       );
     });
     svg.addEventListener("pointerleave", () => {
-      applyGraphAttention(nodeElements, viewport, {
-        x: viewport.width / 2,
-        y: viewport.height / 2,
-      });
+      applyGraphAttention(
+        nodeElements,
+        edgeElements,
+        viewport,
+        graph,
+        centerPoint,
+        activePoint,
+      );
     });
 
     stageState.graphLayer.replaceChildren(svg);
