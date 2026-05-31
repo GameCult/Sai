@@ -41,12 +41,31 @@ const surface = window.SaiEve.createVisualNovelSurface({
   graph: {
     label: "GameCult Ink Knot Graph",
     layout: "norn.2d",
+    solver_wasm: "/static/interactive/norn/norn-rs.wasm",
+    placement: {
+      space: "scene",
+      anchor: "whiteboard",
+      mode: "keystone",
+      quad: [[0.16, 0.18], [0.58, 0.13], [0.62, 0.50], [0.14, 0.56]]
+    },
     nodes: [
       { id: "hub", label: "Hub", target: "hub", x: 0, y: 0, current: true },
       { id: "eve", label: "Eve", target: "eve", x: 1, y: 0 },
     ],
     edges: [{ source: "hub", target: "eve" }],
   },
+  tex: [
+    {
+      id: "bifrost-log-power",
+      label: "Bifrost voting weight",
+      source: "\\\\mathrm{votes}(p)=1+\\\\lfloor\\\\log_b(1+p)\\\\rfloor",
+      placement: {
+        space: "scene",
+        anchor: "whiteboard",
+        mode: "keystone"
+      }
+    }
+  ],
   choices: [
     { text: "What is Eve trying to turn the web into?", targetPath: "eve" },
   ],
@@ -73,13 +92,45 @@ without each renderer inventing its own theme protocol. A renderer may expose
 native color pickers, segmented controls, or accessibility settings, but the
 accepted style state belongs to the provider and comes back as surface tokens.
 
+## Embedded Scene Surfaces
+
+The point of the Eve module is not to flatten Sai into a dashboard. A VN scene
+can contain portable interactive surfaces that are diegetically placed inside
+the scene. The graph map is one of those surfaces.
+
+`embed.norn` declares that a renderer must embed a Norn graph runtime, not draw
+a decorative graph lookalike. Web can use Norn WASM and `@gamecult/norn-viewer`;
+native targets can use `norn-rs` directly or through a platform adapter.
+
+`embed.tex` declares TeX/LaTeX content as a portable rich math/layout surface.
+Web renderers may use KaTeX or another TeX path; native renderers should lower
+the same source into their local text/vector stack.
+
+Both kinds accept `placement`:
+
+```json
+{
+  "space": "scene",
+  "anchor": "whiteboard",
+  "mode": "keystone",
+  "quad": [[0.16, 0.18], [0.58, 0.13], [0.62, 0.50], [0.14, 0.56]],
+  "chromaKey": { "color": "#00ff00", "tolerance": 0.12 },
+  "occlusion": "sprite-mask:whiteboard-hand"
+}
+```
+
+That is the hook for character-pointing-at-whiteboard shots, chromakey panels in
+sprite assets, and perspective/skew/keystone fitting onto scene props.
+
 ## Component Kinds
 
 The first VN surface uses:
 
 - `vn.stage`
 - `image.background`
-- `graph`
+- `embed.norn`
+- `embed.tex`
+- `layer.embedded-surfaces`
 - `layer.sprites`
 - `image.sprite`
 - `layer.cards`

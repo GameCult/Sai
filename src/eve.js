@@ -37,6 +37,22 @@
     });
   }
 
+  function scenePlacement(input = {}) {
+    return compact({
+      space: input.space || "scene",
+      anchor: input.anchor,
+      slot: input.slot,
+      mode: input.mode || input.fit || "overlay",
+      quad: input.quad,
+      transform: input.transform,
+      zIndex: input.zIndex,
+      opacity: input.opacity,
+      chromaKey: input.chromaKey,
+      occlusion: input.occlusion,
+      lighting: input.lighting,
+    });
+  }
+
   function styleTokens(input = {}) {
     return {
       themeId: input.themeId || "sai.vn.default",
@@ -81,7 +97,7 @@
     };
   }
 
-  function graphComponent(graph = {}) {
+  function nornComponent(graph = {}) {
     if (!graph.nodes?.length) return null;
     const rawXs = graph.nodes.map((node) => node.viewX ?? node.x ?? 0);
     const rawYs = graph.nodes.map((node) => node.viewY ?? node.y ?? 0);
@@ -98,28 +114,73 @@
 
     return component(
       "sai.graph",
-      "graph",
+      "embed.norn",
       {
         label: graph.label || "Ink knot graph",
-        layout: graph.layout || "norn.2d",
-        nodes: graph.nodes.map((node) =>
-          compact({
-            id: node.id,
-            label: node.label || node.id,
-            target: node.target || node.knot || node.id,
-            x: normalizeX(node.viewX ?? node.x ?? 0),
-            y: normalizeY(node.viewY ?? node.y ?? 0),
-            rank: node.rank,
-            order: node.order,
-            current: Boolean(node.current),
-            visited: Boolean(node.visited),
-            available: Boolean(node.available),
-            weight: node.weight,
-          }),
-        ),
-        edges: graph.edges || [],
+        engine: {
+          id: "norn",
+          contract: "gamecult.norn.surface.v1",
+          web: {
+            wasm: graph.solver_wasm || graph.solverWasm,
+            package: "@gamecult/norn-viewer",
+          },
+          native: {
+            rustCrate: "norn-rs",
+            direct2dAdapter: "fensalir.norn.direct2d",
+          },
+        },
+        layout: {
+          mode: graph.layout || "norn.2d",
+          iterations: graph.iterations,
+          rankGap: graph.rank_gap || graph.rankGap,
+          nodeGap: graph.node_gap || graph.nodeGap,
+          edgeLength: graph.edge_length || graph.edgeLength,
+        },
+        graph: {
+          nodes: graph.nodes.map((node) =>
+            compact({
+              id: node.id,
+              label: node.label || node.id,
+              target: node.target || node.knot || node.id,
+              x: normalizeX(node.viewX ?? node.x ?? 0),
+              y: normalizeY(node.viewY ?? node.y ?? 0),
+              rank: node.rank,
+              order: node.order,
+              current: Boolean(node.current),
+              visited: Boolean(node.visited),
+              available: Boolean(node.available),
+              weight: node.weight,
+            }),
+          ),
+          edges: graph.edges || [],
+        },
+        interaction: {
+          nodeAction: "story.jump",
+          focusFollowsStory: true,
+          rendererMustUseNorn: true,
+        },
+        placement: scenePlacement(graph.placement || graph.diegetic),
       },
       [],
+    );
+  }
+
+  function texComponents(items = []) {
+    return items.map((item, index) =>
+      component(`sai.tex.${item.id || index}`, "embed.tex", {
+        label: item.label,
+        source: item.source || item.tex || item.latex,
+        sourceUri: item.sourceUri,
+        format: item.format || "latex",
+        display: item.display || "block",
+        macros: item.macros,
+        renderer: {
+          web: item.webRenderer || "katex",
+          native: item.nativeRenderer || "tex-renderer",
+          direct2d: item.direct2dRenderer || "tex-to-directwrite",
+        },
+        placement: scenePlacement(item.placement || item.diegetic),
+      }),
     );
   }
 
@@ -186,8 +247,9 @@
     const speaker = input.speaker || metadata.speaker || "Void";
     const line = input.line || "";
     const title = input.title || scene.label || "Sai Visual Novel";
-    const graph = graphComponent(input.graph);
+    const norn = nornComponent(input.graph || input.norn);
     const variables = variableComponents(input.variables || []);
+    const tex = texComponents(input.tex || input.texSurfaces || []);
 
     const stageChildren = [
       component("sai.background", "image.background", {
@@ -196,7 +258,8 @@
         fit: "cover",
         pixelArt: style.tokens.pixelArt,
       }),
-      graph,
+      norn,
+      component("sai.embeds", "layer.embedded-surfaces", {}, tex),
       component("sai.sprites", "layer.sprites", {}, spriteComponents(input.sprites)),
       component("sai.cards", "layer.cards", {}, domCardComponents(input.domCards)),
       component(
