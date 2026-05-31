@@ -995,6 +995,15 @@
     return false;
   }
 
+  function initialStoryPath(container) {
+    return (
+      container.dataset.inkStartPath ||
+      container.dataset.inkInitialPath ||
+      container.dataset.inkStart ||
+      ""
+    ).trim();
+  }
+
   function renderAdventureGraph(stageState, manifest, story, metadata, render) {
     const graph = resolveAdventureGraph(manifest);
     if (!stageState.graphLayer || !graph) return;
@@ -1432,6 +1441,10 @@
 
       function reset() {
         const story = new window.inkjs.Story(JSON.stringify(storyJson));
+        const startPath = initialStoryPath(container);
+        if (startPath) {
+          chooseStoryPath(story, startPath);
+        }
         status.textContent = container.dataset.inkTitle || "Interactive story";
         choices.replaceChildren();
         variables.replaceChildren();
