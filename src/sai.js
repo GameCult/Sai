@@ -798,7 +798,28 @@
     return stageState.graphLayout;
   }
 
-  function projectGraphNodes(nodes) {
+  function graphViewport(graph) {
+    return {
+      width: Number(graph?.viewport_width || graph?.viewportWidth || 760),
+      height: Number(graph?.viewport_height || graph?.viewportHeight || 420),
+      pad: Number(graph?.viewport_padding || graph?.viewportPadding || 68),
+    };
+  }
+
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  function smoothstep(edge0, edge1, value) {
+    const t = clamp((value - edge0) / Math.max(0.0001, edge1 - edge0), 0, 1);
+    return t * t * (3 - 2 * t);
+  }
+
+  function lerp(start, end, amount) {
+    return start + (end - start) * amount;
+  }
+
+  function projectGraphNodes(nodes, graph) {
     if (!nodes || nodes.length === 0) return [];
     if (
       nodes.some(
@@ -813,15 +834,58 @@
     const maxY = Math.max(...nodes.map((node) => node.y));
     const spanX = Math.max(1, maxX - minX);
     const spanY = Math.max(1, maxY - minY);
-    const pad = 68;
-    const width = 760;
-    const height = 420;
+    const { width, height, pad } = graphViewport(graph);
 
     return nodes.map((node) => ({
       ...node,
       viewX: pad + ((node.x - minX) / spanX) * (width - pad * 2),
       viewY: pad + ((node.y - minY) / spanY) * (height - pad * 2),
     }));
+  }
+
+  function graphNodeRadius(node) {
+    if (node.radius) return Number(node.radius);
+    if (node.core) return 26;
+    return Number(node.weight || 1) <= 0.7 ? 12 : 18;
+  }
+
+  function graphNodeFontSize(node) {
+    if (node.label_size || node.labelSize) {
+      return Number(node.label_size || node.labelSize);
+    }
+    if (node.core) return 15;
+    return Number(node.weight || 1) <= 0.7 ? 10.5 : 12.5;
+  }
+
+  function applyGraphAttention(nodeElements, viewport, focus) {
+    const radius = Math.min(viewport.width, viewport.height);
+    for (const item of nodeElements) {
+      const distance = Math.hypot(item.node.viewX - focus.x, item.node.viewY - focus.y);
+      const proximity = 1 - smoothstep(radius * 0.1, radius * 0.48, distance);
+      const routeBoost =
+        item.group.classList.contains("is-current") ||
+        item.group.classList.contains("is-available")
+          ? 0.28
+          : 0;
+      const attention = clamp(proximity + routeBoost, 0, 1);
+      const maxScale = item.node.core ? 1.56 : 1.92;
+      const minScale = Number(item.node.weight || 1) <= 0.7 ? 0.64 : 0.78;
+      const scale = lerp(minScale, maxScale, attention);
+      item.group.setAttribute(
+        "transform",
+        `translate(${item.node.viewX} ${item.node.viewY}) scale(${scale})`,
+      );
+      item.group.style.opacity = String(lerp(0.54, 1, attention));
+      item.text.style.opacity = String(smoothstep(0.22, 0.62, attention));
+    }
+  }
+
+  function graphFocusFromEvent(svg, viewport, event) {
+    const bounds = svg.getBoundingClientRect();
+    return {
+      x: ((event.clientX - bounds.left) / Math.max(1, bounds.width)) * viewport.width,
+      y: ((event.clientY - bounds.top) / Math.max(1, bounds.height)) * viewport.height,
+    };
   }
 
   function chooseStoryPath(story, target) {
@@ -849,7 +913,8 @@
     const graph = resolveAdventureGraph(manifest);
     if (!stageState.graphLayer || !graph) return;
 
-    const nodes = projectGraphNodes(stageState.graphLayout || graph.nodes || []);
+    const viewport = graphViewport(graph);
+    const nodes = projectGraphNodes(stageState.graphLayout || graph.nodes || [], graph);
     if (nodes.length === 0) return;
 
     const nodeById = new Map(nodes.map((node) => [node.id, node]));
@@ -868,7 +933,7 @@
     );
 
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("viewBox", "0 0 760 420");
+    svg.setAttribute("viewBox", `0 0 ${viewport.width} ${viewport.height}`);
     svg.setAttribute("aria-label", graph.label || "Ink knot graph");
     svg.setAttribute("role", "img");
 
@@ -889,6 +954,7 @@
 
     const nodeGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
     nodeGroup.setAttribute("class", "sai-graph-nodes");
+    const nodeElements = [];
     for (const node of nodes) {
       const target = node.target || node.knot || node.id;
       const key = graphNodeKey(node);
@@ -908,11 +974,15 @@
       group.setAttribute("aria-label", node.label || node.id);
 
       const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-      circle.setAttribute("r", String(node.radius || (node.core ? 28 : 22)));
+      circle.setAttribute("r", String(graphNodeRadius(node)));
       const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
       text.textContent = node.label || node.id;
       text.setAttribute("y", "5");
-      group.append(circle, text);
+      text.style.fontSize = `${graphNodeFontSize(node)}px`;
+      const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+      title.textContent = node.label || node.id;
+      group.append(title, circle, text);
+      nodeElements.push({ group, node, text });
 
       const activate = () => {
         if (!chooseStoryPath(story, target)) return;
@@ -924,9 +994,38 @@
         event.preventDefault();
         activate();
       });
+      group.addEventListener("pointerenter", () => {
+        applyGraphAttention(nodeElements, viewport, {
+          x: node.viewX,
+          y: node.viewY,
+        });
+      });
+      group.addEventListener("focus", () => {
+        applyGraphAttention(nodeElements, viewport, {
+          x: node.viewX,
+          y: node.viewY,
+        });
+      });
       nodeGroup.append(group);
     }
     svg.append(nodeGroup);
+    applyGraphAttention(nodeElements, viewport, {
+      x: viewport.width / 2,
+      y: viewport.height / 2,
+    });
+    svg.addEventListener("pointermove", (event) => {
+      applyGraphAttention(
+        nodeElements,
+        viewport,
+        graphFocusFromEvent(svg, viewport, event),
+      );
+    });
+    svg.addEventListener("pointerleave", () => {
+      applyGraphAttention(nodeElements, viewport, {
+        x: viewport.width / 2,
+        y: viewport.height / 2,
+      });
+    });
 
     stageState.graphLayer.replaceChildren(svg);
     stageState.graphLayer.hidden = false;

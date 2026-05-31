@@ -330,6 +330,7 @@
 .sai-graph-node {
   cursor: pointer;
   outline: none;
+  transition: opacity 140ms ease;
 }
 
 .sai-graph-node circle {
@@ -353,6 +354,7 @@
   stroke: rgba(0, 0, 0, 0.76);
   stroke-width: 4px;
   pointer-events: none;
+  transition: opacity 140ms ease;
 }
 
 .sai-graph-node.is-visited circle {
