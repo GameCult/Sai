@@ -2,3 +2,6 @@ node_modules
 *.log
 .DS_Store
 dist/*.map
+.voidbot/birth/
+.voidbot/logs/
+.voidbot/state/*.msgpack
