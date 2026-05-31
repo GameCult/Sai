@@ -321,10 +321,6 @@
   pointer-events: auto;
 }
 
-.sai-speaker-stage.has-adventure-graph .sai-dom-layer {
-  left: calc(min(48rem, 46vw) + 2rem);
-}
-
 .sai-graph-edges line {
   stroke: rgba(89, 183, 255, 0.38);
   stroke-width: 2.6;
@@ -471,6 +467,10 @@
 .sai-speaker-stage.has-sprites.has-dom-cards .sai-dom-layer {
   inset: 3.6rem 1rem 44%;
   align-items: start;
+}
+
+.sai-speaker-stage.has-adventure-graph.has-dom-cards .sai-dom-layer {
+  inset: 3.6rem 1rem 9rem calc(min(48rem, 46vw) + 2rem);
 }
 
 .sai-speaker-stage.has-sprites.has-dom-cards .sai-dom-card {
@@ -730,13 +730,12 @@
     height: min(44vh, 22rem);
   }
 
-  .sai-speaker-stage.has-adventure-graph .sai-dom-layer {
-    left: 0.65rem;
-    top: calc(3.2rem + min(44vh, 22rem) + 0.75rem);
-  }
-
   .sai-speaker-stage.has-sprites.has-dom-cards .sai-dom-layer {
     inset: 3.2rem 0.65rem 50%;
+  }
+
+  .sai-speaker-stage.has-adventure-graph.has-dom-cards .sai-dom-layer {
+    inset: calc(3.2rem + min(44vh, 22rem) + 0.75rem) 0.65rem 13.5rem;
   }
 
   .sai-sprite-layer {
