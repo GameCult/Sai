@@ -331,7 +331,7 @@
       var(--sai-sprite-offset-x, 0),
       var(--sai-sprite-offset-y, 0)
     )
-    scale(var(--sai-sprite-scale, 1));
+    scale(calc(var(--sai-sprite-scale, 1) * var(--sai-sprite-pixel-scale, 1)));
   transform-origin: bottom center;
   filter: drop-shadow(0 1.2rem 1.8rem rgba(0, 0, 0, 0.55));
 }
@@ -366,6 +366,7 @@
   display: block;
   width: 100%;
   height: auto;
+  image-rendering: pixelated;
   object-fit: contain;
 }
 
@@ -779,7 +780,11 @@
         var(--sai-sprite-offset-x, 0),
         calc(var(--sai-sprite-offset-y, 0) + 1.2rem)
       )
-      scale(calc(var(--sai-sprite-scale, 1) * 0.98));
+      scale(
+        calc(
+          var(--sai-sprite-scale, 1) * var(--sai-sprite-pixel-scale, 1) * 0.98
+        )
+      );
   }
 
   to {
@@ -789,6 +794,8 @@
         var(--sai-sprite-offset-x, 0),
         var(--sai-sprite-offset-y, 0)
       )
-      scale(var(--sai-sprite-scale, 1));
+      scale(
+        calc(var(--sai-sprite-scale, 1) * var(--sai-sprite-pixel-scale, 1))
+      );
   }
 }
