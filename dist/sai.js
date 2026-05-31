@@ -287,6 +287,7 @@
     const background = createElement("div", "sai-speaker-background");
     const scrim = createElement("div", "sai-speaker-scrim");
     const sceneLabel = createElement("p", "sai-speaker-scene");
+    const graphLayer = createElement("div", "sai-graph-layer");
     const spriteLayer = createElement("div", "sai-sprite-layer");
     const domLayer = createElement("div", "sai-dom-layer");
     const card = createElement("div", "sai-speaker-card");
@@ -304,14 +305,24 @@
     avatarShell.append(avatar);
     body.append(name, line, controls);
     card.append(avatarShell, body);
+    graphLayer.hidden = true;
     spriteLayer.hidden = true;
     domLayer.hidden = true;
-    stage.append(background, scrim, spriteLayer, sceneLabel, domLayer, card);
+    stage.append(
+      background,
+      scrim,
+      graphLayer,
+      spriteLayer,
+      sceneLabel,
+      domLayer,
+      card,
+    );
 
     return {
       stage,
       background,
       sceneLabel,
+      graphLayer,
       spriteLayer,
       domLayer,
       card,
@@ -321,6 +332,9 @@
       controls,
       backgroundSet: false,
       backgroundKey: "",
+      graphLayoutPromise: null,
+      graphLayout: null,
+      lastMetadata: {},
     };
   }
 
@@ -617,6 +631,299 @@
     stageState.domLayer.classList.add("is-entering");
   }
 
+  function resolveAdventureGraph(manifest) {
+    return manifest?.adventure_graph || manifest?.adventureGraph || null;
+  }
+
+  function graphNodeKey(node) {
+    return (node?.id || node?.knot || node?.target || node?.label || "")
+      .trim()
+      .toLowerCase();
+  }
+
+  function currentStoryKnot(metadata) {
+    return (metadata.knot || metadata.route || metadata.scene || "")
+      .trim()
+      .toLowerCase();
+  }
+
+  function availableTargets(story) {
+    return new Set(
+      story.currentChoices
+        .map((choice) => {
+          const target = choice?.targetPath?.componentsString;
+          return typeof target === "string" ? target.toLowerCase() : "";
+        })
+        .filter(Boolean),
+    );
+  }
+
+  function decodeBase64Bytes(value) {
+    const maybeBuffer = globalThis.Buffer;
+    const binary =
+      typeof atob === "function"
+        ? atob(value)
+        : maybeBuffer?.from(value, "base64").toString("binary");
+    if (!binary) {
+      throw new Error("No base64 decoder is available for Norn graph solver.");
+    }
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) {
+      bytes[index] = binary.charCodeAt(index);
+    }
+    return bytes;
+  }
+
+  async function loadNornSolver(manifest, graph) {
+    if (!graph?.solver_wasm && !graph?.solverWasm && !graph?.solver_wasm_base64) {
+      throw new Error("Adventure graph is missing solver_wasm.");
+    }
+
+    const source = graph.solver_wasm || graph.solverWasm;
+    const bytes = graph.solver_wasm_base64
+      ? decodeBase64Bytes(graph.solver_wasm_base64)
+      : await fetch(resolveManifestAsset(manifest, source)).then((response) => {
+          if (!response.ok) {
+            throw new Error(`could not fetch Norn solver: ${response.status}`);
+          }
+          return response.arrayBuffer();
+        });
+
+    const result = await WebAssembly.instantiate(bytes, {});
+    const exports = result.instance.exports;
+    const required = [
+      "memory",
+      "norn_graph_alloc_f32",
+      "norn_graph_dealloc_f32",
+      "norn_graph_alloc_u32",
+      "norn_graph_dealloc_u32",
+      "norn_graph_layout_2d",
+    ];
+    for (const name of required) {
+      if (!exports[name]) {
+        throw new Error(`Norn solver wasm is missing ${name}.`);
+      }
+    }
+    return exports;
+  }
+
+  function normaliseGraphEdges(nodes, edges) {
+    const nodeIndex = new Map(nodes.map((node, index) => [node.id, index]));
+    return (edges || [])
+      .map((edge) => {
+        const source = edge.source ?? edge.from;
+        const target = edge.target ?? edge.to;
+        if (!nodeIndex.has(source) || !nodeIndex.has(target)) return null;
+        return [nodeIndex.get(source), nodeIndex.get(target)];
+      })
+      .filter(Boolean)
+      .flat();
+  }
+
+  async function layoutAdventureGraph(stageState, manifest) {
+    const graph = resolveAdventureGraph(manifest);
+    const nodes = graph?.nodes || [];
+    if (!graph || nodes.length === 0) return null;
+
+    if (!stageState.graphLayoutPromise) {
+      stageState.graphLayoutPromise = (async () => {
+        const solver = await loadNornSolver(manifest, graph);
+        const weights = new Float32Array(
+          nodes.map((node) => Number(node.weight || 1)),
+        );
+        const edgePairs = new Uint32Array(
+          normaliseGraphEdges(nodes, graph.edges || []),
+        );
+        const nodeCount = weights.length;
+        const edgeCount = edgePairs.length / 2;
+        const nodeWeightsPtr = solver.norn_graph_alloc_f32(nodeCount);
+        const edgePairsPtr = solver.norn_graph_alloc_u32(edgePairs.length);
+        const outputPtr = solver.norn_graph_alloc_f32(nodeCount * 4);
+
+        try {
+          new Float32Array(solver.memory.buffer, nodeWeightsPtr, nodeCount).set(
+            weights,
+          );
+          new Uint32Array(
+            solver.memory.buffer,
+            edgePairsPtr,
+            edgePairs.length,
+          ).set(edgePairs);
+
+          const status = solver.norn_graph_layout_2d(
+            nodeWeightsPtr,
+            nodeCount,
+            edgePairsPtr,
+            edgeCount,
+            outputPtr,
+            Number(graph.iterations || 180),
+            Number(graph.rank_gap || graph.rankGap || 150),
+            Number(graph.node_gap || graph.nodeGap || 80),
+            Number(graph.edge_length || graph.edgeLength || 120),
+          );
+          if (status !== 0) {
+            throw new Error(`Norn solver failed with status ${status}.`);
+          }
+
+          const raw = new Float32Array(
+            solver.memory.buffer,
+            outputPtr,
+            nodeCount * 4,
+          );
+          return nodes.map((node, index) => ({
+            ...node,
+            x: raw[index * 4],
+            y: raw[index * 4 + 1],
+            rank: raw[index * 4 + 2],
+            order: raw[index * 4 + 3],
+          }));
+        } finally {
+          solver.norn_graph_dealloc_f32(nodeWeightsPtr, nodeCount);
+          solver.norn_graph_dealloc_u32(edgePairsPtr, edgePairs.length);
+          solver.norn_graph_dealloc_f32(outputPtr, nodeCount * 4);
+        }
+      })();
+    }
+
+    stageState.graphLayout = await stageState.graphLayoutPromise;
+    return stageState.graphLayout;
+  }
+
+  function projectGraphNodes(nodes) {
+    if (!nodes || nodes.length === 0) return [];
+    if (
+      nodes.some(
+        (node) => typeof node.x !== "number" || typeof node.y !== "number",
+      )
+    ) {
+      return [];
+    }
+    const minX = Math.min(...nodes.map((node) => node.x));
+    const maxX = Math.max(...nodes.map((node) => node.x));
+    const minY = Math.min(...nodes.map((node) => node.y));
+    const maxY = Math.max(...nodes.map((node) => node.y));
+    const spanX = Math.max(1, maxX - minX);
+    const spanY = Math.max(1, maxY - minY);
+    const pad = 68;
+    const width = 760;
+    const height = 420;
+
+    return nodes.map((node) => ({
+      ...node,
+      viewX: pad + ((node.x - minX) / spanX) * (width - pad * 2),
+      viewY: pad + ((node.y - minY) / spanY) * (height - pad * 2),
+    }));
+  }
+
+  function chooseStoryPath(story, target) {
+    if (!target) return false;
+
+    const lowerTarget = target.toLowerCase();
+    const choiceIndex = story.currentChoices.findIndex((choice) => {
+      const path = choice?.targetPath?.componentsString;
+      return typeof path === "string" && path.toLowerCase() === lowerTarget;
+    });
+    if (choiceIndex !== -1) {
+      story.ChooseChoiceIndex(choiceIndex);
+      return true;
+    }
+
+    if (typeof story.ChoosePathString === "function") {
+      story.ChoosePathString(target);
+      return true;
+    }
+
+    return false;
+  }
+
+  function renderAdventureGraph(stageState, manifest, story, metadata, render) {
+    const graph = resolveAdventureGraph(manifest);
+    if (!stageState.graphLayer || !graph) return;
+
+    const nodes = projectGraphNodes(stageState.graphLayout || graph.nodes || []);
+    if (nodes.length === 0) return;
+
+    const nodeById = new Map(nodes.map((node) => [node.id, node]));
+    const current = currentStoryKnot(metadata);
+    const available = availableTargets(story);
+    const visited = new Set(
+      nodes
+        .filter((node) => {
+          try {
+            return story.VisitCountAtPathString(node.target || node.knot) > 0;
+          } catch {
+            return false;
+          }
+        })
+        .map(graphNodeKey),
+    );
+
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 760 420");
+    svg.setAttribute("aria-label", graph.label || "Ink knot graph");
+    svg.setAttribute("role", "img");
+
+    const edgeGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    edgeGroup.setAttribute("class", "sai-graph-edges");
+    for (const edge of graph.edges || []) {
+      const source = nodeById.get(edge.source ?? edge.from);
+      const target = nodeById.get(edge.target ?? edge.to);
+      if (!source || !target) continue;
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", String(source.viewX));
+      line.setAttribute("y1", String(source.viewY));
+      line.setAttribute("x2", String(target.viewX));
+      line.setAttribute("y2", String(target.viewY));
+      edgeGroup.append(line);
+    }
+    svg.append(edgeGroup);
+
+    const nodeGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    nodeGroup.setAttribute("class", "sai-graph-nodes");
+    for (const node of nodes) {
+      const target = node.target || node.knot || node.id;
+      const key = graphNodeKey(node);
+      const canChoose = available.has(String(target).toLowerCase());
+      const isCurrent = key && key === current;
+      const isVisited = visited.has(key);
+      const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      group.setAttribute("class", "sai-graph-node");
+      group.dataset.saiGraphNode = node.id;
+      group.dataset.saiGraphTarget = target;
+      if (isCurrent) group.classList.add("is-current");
+      if (isVisited) group.classList.add("is-visited");
+      if (canChoose) group.classList.add("is-available");
+      group.setAttribute("transform", `translate(${node.viewX} ${node.viewY})`);
+      group.setAttribute("tabindex", "0");
+      group.setAttribute("role", "button");
+      group.setAttribute("aria-label", node.label || node.id);
+
+      const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      circle.setAttribute("r", String(node.radius || (node.core ? 28 : 22)));
+      const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      text.textContent = node.label || node.id;
+      text.setAttribute("y", "5");
+      group.append(circle, text);
+
+      const activate = () => {
+        if (!chooseStoryPath(story, target)) return;
+        render();
+      };
+      group.addEventListener("click", activate);
+      group.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        activate();
+      });
+      nodeGroup.append(group);
+    }
+    svg.append(nodeGroup);
+
+    stageState.graphLayer.replaceChildren(svg);
+    stageState.graphLayer.hidden = false;
+    stageState.stage.classList.add("has-adventure-graph");
+  }
+
   function renderSpeakerLine(stageState, manifest, text, metadata) {
     const speaker = metadata.speaker || "Void";
     const avatar = resolveSpeakerAvatar(manifest, speaker, metadata.avatar);
@@ -775,9 +1082,13 @@
     }
 
     if (text.length > 0) {
+      stageState.lastMetadata = metadata;
       setSpeakerBackground(stageState, manifest, container, metadata);
       renderSpeakerSprites(stageState, manifest, metadata);
       renderDomCards(stageState, manifest, metadata);
+      renderAdventureGraph(stageState, manifest, story, metadata, () =>
+        renderSpeakerStep(story, state),
+      );
       renderSpeakerLine(stageState, manifest, text, metadata);
       renderVariables(story, variables);
 
@@ -921,9 +1232,42 @@
           stageState.sceneLabel.textContent = "";
           stageState.spriteLayer.replaceChildren();
           stageState.spriteLayer.hidden = true;
+          stageState.graphLayer.replaceChildren();
+          stageState.graphLayer.hidden = true;
           stageState.domLayer.replaceChildren();
           stageState.domLayer.hidden = true;
-          stageState.stage.classList.remove("has-dom-cards", "has-sprites");
+          stageState.stage.classList.remove(
+            "has-adventure-graph",
+            "has-dom-cards",
+            "has-sprites",
+          );
+          layoutAdventureGraph(stageState, visualManifest).catch((error) => {
+            stageState.graphLayer.replaceChildren(
+              createElement(
+                "p",
+                "sai-graph-error",
+                error.message || String(error),
+              ),
+            );
+            stageState.graphLayer.hidden = false;
+            stageState.stage.classList.add("has-adventure-graph");
+          });
+          stageState.graphLayoutPromise?.then(() => {
+            renderAdventureGraph(
+              stageState,
+              visualManifest,
+              story,
+              stageState.lastMetadata,
+              () => renderSpeakerStep(story, {
+                choices,
+                variables,
+                stageState,
+                manifest: visualManifest,
+                continueButton,
+                container,
+              }),
+            );
+          });
           stageState.card.classList.remove("is-entering", "is-exiting");
           stageState.avatar.removeAttribute("src");
           stageState.avatar.hidden = true;

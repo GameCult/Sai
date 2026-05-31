@@ -302,6 +302,88 @@
   display: none;
 }
 
+.sai-graph-layer {
+  position: absolute;
+  inset: 3.2rem 1rem 9rem;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.sai-graph-layer[hidden] {
+  display: none;
+}
+
+.sai-graph-layer svg {
+  display: block;
+  width: min(48rem, 44vw);
+  height: min(28rem, 52vh);
+  overflow: visible;
+  pointer-events: auto;
+}
+
+.sai-graph-edges line {
+  stroke: rgba(89, 183, 255, 0.38);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+}
+
+.sai-graph-node {
+  cursor: pointer;
+  outline: none;
+}
+
+.sai-graph-node circle {
+  fill: rgba(7, 17, 26, 0.32);
+  stroke: rgba(89, 183, 255, 0.72);
+  stroke-width: 2.5;
+  transition:
+    fill 160ms ease,
+    stroke 160ms ease,
+    stroke-width 160ms ease;
+}
+
+.sai-graph-node text {
+  fill: rgba(246, 241, 226, 0.92);
+  font-family: var(--sai-title-font);
+  font-size: 14px;
+  font-weight: 600;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  paint-order: stroke;
+  stroke: rgba(0, 0, 0, 0.76);
+  stroke-width: 4px;
+  pointer-events: none;
+}
+
+.sai-graph-node.is-visited circle {
+  fill: rgba(89, 183, 255, 0.12);
+}
+
+.sai-graph-node.is-available circle {
+  stroke: rgba(255, 198, 120, 0.88);
+}
+
+.sai-graph-node.is-current circle {
+  fill: rgba(255, 198, 120, 0.22);
+  stroke: rgba(255, 198, 120, 1);
+  stroke-width: 4;
+}
+
+.sai-graph-node:hover circle,
+.sai-graph-node:focus-visible circle {
+  fill: rgba(255, 198, 120, 0.18);
+  stroke: rgba(255, 236, 207, 1);
+  stroke-width: 4;
+}
+
+.sai-graph-error {
+  max-width: 30rem;
+  margin: 0;
+  color: #ffb7a6;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
 .sai-sprite-layer {
   position: absolute;
   inset: 0 0 128px;
@@ -633,6 +715,15 @@
   .sai-dom-layer {
     inset: 3.2rem 0.65rem 13.5rem;
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sai-graph-layer {
+    inset: 3.2rem 0.65rem 13.5rem;
+  }
+
+  .sai-graph-layer svg {
+    width: min(100%, 34rem);
+    height: min(44vh, 22rem);
   }
 
   .sai-speaker-stage.has-sprites.has-dom-cards .sai-dom-layer {
