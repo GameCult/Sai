@@ -335,6 +335,7 @@
       backgroundKey: "",
       graphLayoutPromise: null,
       graphLayout: null,
+      graphAttentionCleanup: null,
       lastMetadata: {},
     };
   }
@@ -882,11 +883,11 @@
     };
   }
 
-  function explorationCentroid(activePoint, cursorPoint) {
+  function blendGraphFocus(activePoint, cursorPoint, cursorInfluence) {
     if (!activePoint) return cursorPoint;
     return {
-      x: (activePoint.x + cursorPoint.x) / 2,
-      y: (activePoint.y + cursorPoint.y) / 2,
+      x: lerp(activePoint.x, cursorPoint.x, cursorInfluence),
+      y: lerp(activePoint.y, cursorPoint.y, cursorInfluence),
     };
   }
 
@@ -915,8 +916,16 @@
     };
   }
 
-  function applyGraphAttention(nodeElements, edgeElements, viewport, graph, cursorPoint, activePoint) {
-    const focus = explorationCentroid(activePoint, cursorPoint);
+  function applyGraphAttention(
+    nodeElements,
+    edgeElements,
+    viewport,
+    graph,
+    cursorPoint,
+    activePoint,
+    cursorInfluence = 1,
+  ) {
+    const focus = blendGraphFocus(activePoint, cursorPoint, cursorInfluence);
     const radius = Math.min(viewport.width, viewport.height);
     for (const item of nodeElements) {
       const distorted = distortGraphPoint(
@@ -955,23 +964,29 @@
     }
   }
 
-  function graphFocusFromEvent(svg, viewport, event, nodeElementById) {
-    const targetNode = event.target?.closest?.(".sai-graph-node");
-    const targetItem = targetNode?.dataset?.saiGraphNode
-      ? nodeElementById.get(targetNode.dataset.saiGraphNode)
-      : null;
-    if (targetItem) {
-      return {
-        x: targetItem.node.viewX,
-        y: targetItem.node.viewY,
-      };
-    }
-
+  function graphPointFromClient(svg, viewport, clientX, clientY) {
     const bounds = svg.getBoundingClientRect();
     return {
-      x: ((event.clientX - bounds.left) / Math.max(1, bounds.width)) * viewport.width,
-      y: ((event.clientY - bounds.top) / Math.max(1, bounds.height)) * viewport.height,
+      x: ((clientX - bounds.left) / Math.max(1, bounds.width)) * viewport.width,
+      y: ((clientY - bounds.top) / Math.max(1, bounds.height)) * viewport.height,
     };
+  }
+
+  function distanceToRect(clientX, clientY, rect) {
+    const dx = Math.max(rect.left - clientX, 0, clientX - rect.right);
+    const dy = Math.max(rect.top - clientY, 0, clientY - rect.bottom);
+    return Math.hypot(dx, dy);
+  }
+
+  function graphCursorInfluence(svg, graph, clientX, clientY) {
+    const bounds = svg.getBoundingClientRect();
+    const activationDistance = Number(
+      graph?.focus_cursor_activation_distance ||
+        graph?.focusCursorActivationDistance ||
+        Math.min(window.innerWidth, window.innerHeight) * 0.32,
+    );
+    const distance = distanceToRect(clientX, clientY, bounds);
+    return 1 - smoothstep(0, activationDistance, distance);
   }
 
   function chooseStoryPath(story, target) {
@@ -1090,32 +1105,6 @@
         event.preventDefault();
         activate();
       });
-      group.addEventListener("pointerenter", () => {
-        applyGraphAttention(
-          nodeElements,
-          edgeElements,
-          viewport,
-          graph,
-          {
-            x: node.viewX,
-            y: node.viewY,
-          },
-          activePoint,
-        );
-      });
-      group.addEventListener("focus", () => {
-        applyGraphAttention(
-          nodeElements,
-          edgeElements,
-          viewport,
-          graph,
-          {
-            x: node.viewX,
-            y: node.viewY,
-          },
-          activePoint,
-        );
-      });
       nodeGroup.append(group);
     }
     svg.append(nodeGroup);
@@ -1134,25 +1123,10 @@
       edgeElements.push({ line, source, target });
     }
 
-    applyGraphAttention(
-      nodeElements,
-      edgeElements,
-      viewport,
-      graph,
-      centerPoint,
-      activePoint,
-    );
-    svg.addEventListener("pointermove", (event) => {
-      applyGraphAttention(
-        nodeElements,
-        edgeElements,
-        viewport,
-        graph,
-        graphFocusFromEvent(svg, viewport, event, nodeElementById),
-        activePoint,
-      );
-    });
-    svg.addEventListener("pointerleave", () => {
+    stageState.graphAttentionCleanup?.();
+    stageState.graphAttentionCleanup = null;
+
+    const applyDefaultFocus = () => {
       applyGraphAttention(
         nodeElements,
         edgeElements,
@@ -1160,8 +1134,41 @@
         graph,
         centerPoint,
         activePoint,
+        0,
       );
-    });
+    };
+
+    const applyPointerFocus = (event) => {
+      const cursorPoint = graphPointFromClient(
+        svg,
+        viewport,
+        event.clientX,
+        event.clientY,
+      );
+      const cursorInfluence = graphCursorInfluence(
+        svg,
+        graph,
+        event.clientX,
+        event.clientY,
+      );
+      applyGraphAttention(
+        nodeElements,
+        edgeElements,
+        viewport,
+        graph,
+        cursorPoint,
+        activePoint,
+        cursorInfluence,
+      );
+    };
+
+    applyDefaultFocus();
+    window.addEventListener("pointermove", applyPointerFocus, { passive: true });
+    window.addEventListener("resize", applyDefaultFocus);
+    stageState.graphAttentionCleanup = () => {
+      window.removeEventListener("pointermove", applyPointerFocus);
+      window.removeEventListener("resize", applyDefaultFocus);
+    };
 
     stageState.graphLayer.replaceChildren(svg);
     stageState.graphLayer.hidden = false;
@@ -1480,6 +1487,8 @@
           stageState.sceneLabel.textContent = "";
           stageState.spriteLayer.replaceChildren();
           stageState.spriteLayer.hidden = true;
+          stageState.graphAttentionCleanup?.();
+          stageState.graphAttentionCleanup = null;
           stageState.graphLayer.replaceChildren();
           stageState.graphLayer.hidden = true;
           stageState.domLayer.replaceChildren();
