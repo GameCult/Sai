@@ -883,15 +883,30 @@
     };
   }
 
-  function blendGraphFocus(activePoint, cursorPoint, cursorInfluence) {
+  function graphCursorFocusPull(graph) {
+    const value = Number(
+      graph?.focus_cursor_pull || graph?.focusCursorPull || 0.28,
+    );
+    return clamp(Number.isFinite(value) ? value : 0.28, 0, 1);
+  }
+
+  function blendGraphFocus(activePoint, cursorPoint, cursorInfluence, graph) {
     if (!activePoint) return cursorPoint;
+    const pull = cursorInfluence * graphCursorFocusPull(graph);
     return {
-      x: lerp(activePoint.x, cursorPoint.x, cursorInfluence),
-      y: lerp(activePoint.y, cursorPoint.y, cursorInfluence),
+      x: lerp(activePoint.x, cursorPoint.x, pull),
+      y: lerp(activePoint.y, cursorPoint.y, pull),
     };
   }
 
-  function distortGraphPoint(point, centroid, cursorPoint, viewport, graph) {
+  function distortGraphPoint(
+    point,
+    centroid,
+    cursorPoint,
+    viewport,
+    graph,
+    cursorInfluence,
+  ) {
     const { radius, strength, padding, cursorRadius, cursorDeadZone } =
       graphDistortionSettings(graph, viewport);
     const dx = point.x - centroid.x;
@@ -905,6 +920,7 @@
     const push =
       radius *
       strength *
+      cursorInfluence *
       falloff *
       cursorTaper *
       (1 - Math.min(distance / radius, 1) * 0.32);
@@ -926,20 +942,32 @@
     activePoint,
     cursorInfluence = 1,
   ) {
-    const focus = blendGraphFocus(activePoint, cursorPoint, cursorInfluence);
-    applyGraphCamera(cameraGroup, viewport, graph, focus, activePoint, cursorInfluence);
+    const focus = blendGraphFocus(activePoint, cursorPoint, cursorInfluence, graph);
+    const frame = graphCameraFrame(graph, activePoint, cursorInfluence);
+    const cameraFocus = constrainGraphFocusToActive(
+      focus,
+      activePoint,
+      viewport,
+      graph,
+      frame,
+    );
+    applyGraphCamera(cameraGroup, viewport, cameraFocus, frame);
     const radius = Math.min(viewport.width, viewport.height);
     for (const item of nodeElements) {
       const distorted = distortGraphPoint(
         { x: item.node.viewX, y: item.node.viewY },
-        focus,
+        cameraFocus,
         cursorPoint,
         viewport,
         graph,
+        cursorInfluence,
       );
       item.distortedX = distorted.x;
       item.distortedY = distorted.y;
-      const distance = Math.hypot(item.node.viewX - focus.x, item.node.viewY - focus.y);
+      const distance = Math.hypot(
+        item.node.viewX - cameraFocus.x,
+        item.node.viewY - cameraFocus.y,
+      );
       const proximity = 1 - smoothstep(radius * 0.1, radius * 0.48, distance);
       const routeBoost =
         item.group.classList.contains("is-current") ||
@@ -975,15 +1003,7 @@
     return String(value).replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
   }
 
-  function applyGraphCamera(
-    cameraGroup,
-    viewport,
-    graph,
-    focus,
-    activePoint,
-    cursorInfluence,
-  ) {
-    if (!cameraGroup) return;
+  function graphCameraFrame(graph, activePoint, cursorInfluence) {
     const activeFrame = activePoint
       ? graphZoomFrame(graph, "active_zoom_frame", 0.5)
       : 1;
@@ -996,7 +1016,29 @@
       cursorZoomFrame,
       cursorInfluence,
     );
-    const frame = Math.min(activeFrame, cursorFrame);
+    return Math.min(activeFrame, cursorFrame);
+  }
+
+  function constrainGraphFocusToActive(focus, activePoint, viewport, graph, frame) {
+    if (!activePoint) return focus;
+    const keepValue = Number(
+      graph?.active_keep_in_view ||
+        graph?.activeKeepInView ||
+        graph?.focus_active_keep_in_view ||
+        graph?.focusActiveKeepInView ||
+        0.72,
+    );
+    const keep = clamp(Number.isFinite(keepValue) ? keepValue : 0.72, 0.2, 1);
+    const maxX = (viewport.width * frame * keep) / 2;
+    const maxY = (viewport.height * frame * keep) / 2;
+    return {
+      x: clamp(focus.x, activePoint.x - maxX, activePoint.x + maxX),
+      y: clamp(focus.y, activePoint.y - maxY, activePoint.y + maxY),
+    };
+  }
+
+  function applyGraphCamera(cameraGroup, viewport, focus, frame) {
+    if (!cameraGroup) return;
     const zoom = 1 / frame;
     const x = viewport.width / 2 - focus.x * zoom;
     const y = viewport.height / 2 - focus.y * zoom;

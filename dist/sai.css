@@ -383,9 +383,16 @@
 }
 
 .sai-graph-node.is-current circle {
-  fill: rgba(255, 198, 120, 0.22);
-  stroke: rgba(255, 198, 120, 1);
+  fill: rgba(255, 138, 42, 0.24);
+  stroke: rgba(255, 138, 42, 1);
   stroke-width: 4;
+}
+
+.sai-graph-node.is-current text {
+  fill: rgba(255, 138, 42, 1);
+  stroke: rgba(3, 5, 8, 0.92);
+  stroke-width: 5px;
+  opacity: 1;
 }
 
 .sai-graph-node:hover circle,
