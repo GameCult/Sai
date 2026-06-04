@@ -917,6 +917,7 @@
   }
 
   function applyGraphAttention(
+    cameraGroup,
     nodeElements,
     edgeElements,
     viewport,
@@ -926,6 +927,7 @@
     cursorInfluence = 1,
   ) {
     const focus = blendGraphFocus(activePoint, cursorPoint, cursorInfluence);
+    applyGraphCamera(cameraGroup, viewport, graph, focus, activePoint, cursorInfluence);
     const radius = Math.min(viewport.width, viewport.height);
     for (const item of nodeElements) {
       const distorted = distortGraphPoint(
@@ -962,6 +964,39 @@
       edge.line.setAttribute("x2", String(edge.target.distortedX));
       edge.line.setAttribute("y2", String(edge.target.distortedY));
     }
+  }
+
+  function graphZoomFrame(graph, key, fallback) {
+    const value = Number(graph?.[key] ?? graph?.[snakeToCamel(key)] ?? fallback);
+    return clamp(Number.isFinite(value) ? value : fallback, 0.18, 1);
+  }
+
+  function snakeToCamel(value) {
+    return String(value).replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+  }
+
+  function applyGraphCamera(
+    cameraGroup,
+    viewport,
+    graph,
+    focus,
+    activePoint,
+    cursorInfluence,
+  ) {
+    if (!cameraGroup) return;
+    const activeFrame = activePoint
+      ? graphZoomFrame(graph, "active_zoom_frame", 0.5)
+      : 1;
+    const cursorFrame = lerp(
+      1,
+      graphZoomFrame(graph, "cursor_zoom_frame", 0.34),
+      cursorInfluence,
+    );
+    const frame = Math.min(activeFrame, cursorFrame);
+    const zoom = 1 / frame;
+    const x = viewport.width / 2 - focus.x * zoom;
+    const y = viewport.height / 2 - focus.y * zoom;
+    cameraGroup.setAttribute("transform", `translate(${x} ${y}) scale(${zoom})`);
   }
 
   function graphPointFromClient(svg, viewport, clientX, clientY) {
@@ -1052,9 +1087,13 @@
     svg.setAttribute("aria-label", graph.label || "Ink knot graph");
     svg.setAttribute("role", "img");
 
+    const cameraGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    cameraGroup.setAttribute("class", "sai-graph-camera");
+    svg.append(cameraGroup);
+
     const edgeGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
     edgeGroup.setAttribute("class", "sai-graph-edges");
-    svg.append(edgeGroup);
+    cameraGroup.append(edgeGroup);
 
     const nodeGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
     nodeGroup.setAttribute("class", "sai-graph-nodes");
@@ -1096,10 +1135,17 @@
       });
 
       const activate = () => {
+        if (story.canContinue) {
+          render();
+          return;
+        }
         if (!chooseStoryPath(story, target)) return;
         render();
       };
-      group.addEventListener("click", activate);
+      group.addEventListener("click", (event) => {
+        event.stopPropagation();
+        activate();
+      });
       group.addEventListener("keydown", (event) => {
         if (event.key !== "Enter" && event.key !== " ") return;
         event.preventDefault();
@@ -1107,7 +1153,7 @@
       });
       nodeGroup.append(group);
     }
-    svg.append(nodeGroup);
+    cameraGroup.append(nodeGroup);
 
     const nodeElementById = new Map(nodeElements.map((item) => [item.node.id, item]));
     for (const edge of graph.edges || []) {
@@ -1128,6 +1174,7 @@
 
     const applyDefaultFocus = () => {
       applyGraphAttention(
+        cameraGroup,
         nodeElements,
         edgeElements,
         viewport,
@@ -1152,6 +1199,7 @@
         event.clientY,
       );
       applyGraphAttention(
+        cameraGroup,
         nodeElements,
         edgeElements,
         viewport,
@@ -1163,10 +1211,12 @@
     };
 
     applyDefaultFocus();
-    window.addEventListener("pointermove", applyPointerFocus, { passive: true });
+    svg.addEventListener("pointermove", applyPointerFocus, { passive: true });
+    svg.addEventListener("pointerleave", applyDefaultFocus);
     window.addEventListener("resize", applyDefaultFocus);
     stageState.graphAttentionCleanup = () => {
-      window.removeEventListener("pointermove", applyPointerFocus);
+      svg.removeEventListener("pointermove", applyPointerFocus);
+      svg.removeEventListener("pointerleave", applyDefaultFocus);
       window.removeEventListener("resize", applyDefaultFocus);
     };
 
@@ -1250,6 +1300,21 @@
     });
   }
 
+  function setSpeakerCanContinue(stageState, canContinue) {
+    if (!stageState?.stage) return;
+    stageState.stage.classList.toggle("can-continue", canContinue);
+    stageState.stage.dataset.saiCanContinue = canContinue ? "true" : "false";
+  }
+
+  function isSpeakerInteractiveTarget(target) {
+    if (!(target instanceof Element)) return false;
+    return Boolean(
+      target.closest(
+        "a, button, input, textarea, select, summary, [role='button'], [contenteditable='true']",
+      ),
+    );
+  }
+
   function renderCinematicStep(story, state) {
     const { choices, variables, stageState, manifest, continueButton } = state;
 
@@ -1315,6 +1380,7 @@
 
     choices.replaceChildren();
     continueButton.hidden = true;
+    setSpeakerCanContinue(stageState, false);
 
     let text = "";
     let metadata = {};
@@ -1346,6 +1412,7 @@
       if (story.canContinue) {
         continueButton.hidden = false;
         continueButton.textContent = "Continue";
+        setSpeakerCanContinue(stageState, true);
         return;
       }
     }
@@ -1530,7 +1597,8 @@
           stageState.avatar.hidden = true;
           stageState.name.textContent = "";
           stageState.line.textContent = "";
-          continueButton.onclick = () => {
+          const advanceSpeaker = () => {
+            if (continueButton.hidden) return;
             stageState.card.classList.add("is-exiting");
             window.setTimeout(() => {
               stageState.card.classList.remove("is-exiting");
@@ -1543,6 +1611,11 @@
                 container,
               });
             }, 140);
+          };
+          continueButton.onclick = advanceSpeaker;
+          stageState.stage.onclick = (event) => {
+            if (event.defaultPrevented || isSpeakerInteractiveTarget(event.target)) return;
+            advanceSpeaker();
           };
           renderSpeakerStep(story, {
             choices,

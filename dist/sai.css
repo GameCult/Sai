@@ -251,6 +251,10 @@
   height: clamp(620px, 78vh, 860px);
 }
 
+.sai-speaker-stage.can-continue {
+  cursor: pointer;
+}
+
 .sai-speaker-background,
 .sai-speaker-scrim {
   position: absolute;
@@ -304,9 +308,22 @@
 
 .sai-graph-layer {
   position: absolute;
-  inset: 3.2rem 1rem 9rem;
+  top: 3.2rem;
+  left: 1rem;
   z-index: 4;
-  pointer-events: none;
+  width: min(24rem, calc(100% - 2rem));
+  height: min(15rem, 34vh);
+  overflow: hidden;
+  border: 1px solid rgba(89, 183, 255, 0.18);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(5, 9, 15, 0.72), rgba(3, 6, 11, 0.52)),
+    radial-gradient(circle at 16% 10%, rgba(89, 183, 255, 0.12), transparent 36%);
+  box-shadow:
+    0 18px 42px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  pointer-events: auto;
+  backdrop-filter: blur(8px);
 }
 
 .sai-graph-layer[hidden] {
@@ -315,9 +332,9 @@
 
 .sai-graph-layer svg {
   display: block;
-  width: min(48rem, 46vw);
-  height: min(28rem, 52vh);
-  overflow: visible;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
   pointer-events: auto;
 }
 
@@ -472,7 +489,7 @@
 }
 
 .sai-speaker-stage.has-adventure-graph.has-dom-cards .sai-dom-layer {
-  inset: 3.6rem 1rem 9rem calc(min(48rem, 46vw) + 2rem);
+  inset: 3.6rem 1rem 9rem calc(min(24rem, calc(100% - 2rem)) + 2rem);
 }
 
 .sai-speaker-stage.has-sprites.has-dom-cards .sai-dom-card {
@@ -741,12 +758,10 @@
   }
 
   .sai-graph-layer {
-    inset: 3.2rem 0.65rem 13.5rem;
-  }
-
-  .sai-graph-layer svg {
-    width: min(100%, 34rem);
-    height: min(44vh, 22rem);
+    top: 3.2rem;
+    left: 0.65rem;
+    width: min(18rem, calc(100% - 1.3rem));
+    height: min(11rem, 28vh);
   }
 
   .sai-speaker-stage.has-sprites.has-dom-cards .sai-dom-layer {
@@ -754,7 +769,7 @@
   }
 
   .sai-speaker-stage.has-adventure-graph.has-dom-cards .sai-dom-layer {
-    inset: calc(3.2rem + min(44vh, 22rem) + 0.75rem) 0.65rem 13.5rem;
+    inset: calc(3.2rem + min(11rem, 28vh) + 0.75rem) 0.65rem 13.5rem;
   }
 
   .sai-sprite-layer {
