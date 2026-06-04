@@ -987,9 +987,13 @@
     const activeFrame = activePoint
       ? graphZoomFrame(graph, "active_zoom_frame", 0.5)
       : 1;
+    const cursorZoomFrame = Math.max(
+      activeFrame,
+      graphZoomFrame(graph, "cursor_zoom_frame", activeFrame),
+    );
     const cursorFrame = lerp(
       1,
-      graphZoomFrame(graph, "cursor_zoom_frame", 0.34),
+      cursorZoomFrame,
       cursorInfluence,
     );
     const frame = Math.min(activeFrame, cursorFrame);
@@ -1007,21 +1011,26 @@
     };
   }
 
-  function distanceToRect(clientX, clientY, rect) {
-    const dx = Math.max(rect.left - clientX, 0, clientX - rect.right);
-    const dy = Math.max(rect.top - clientY, 0, clientY - rect.bottom);
-    return Math.hypot(dx, dy);
-  }
-
   function graphCursorInfluence(svg, graph, clientX, clientY) {
     const bounds = svg.getBoundingClientRect();
-    const activationDistance = Number(
-      graph?.focus_cursor_activation_distance ||
-        graph?.focusCursorActivationDistance ||
-        Math.min(window.innerWidth, window.innerHeight) * 0.32,
+    if (
+      clientX < bounds.left ||
+      clientX > bounds.right ||
+      clientY < bounds.top ||
+      clientY > bounds.bottom
+    ) {
+      return 0;
+    }
+    const edgeRamp = Number(
+      graph?.focus_cursor_edge_ramp || graph?.focusCursorEdgeRamp || 10,
     );
-    const distance = distanceToRect(clientX, clientY, bounds);
-    return 1 - smoothstep(0, activationDistance, distance);
+    const edgeDistance = Math.min(
+      clientX - bounds.left,
+      bounds.right - clientX,
+      clientY - bounds.top,
+      bounds.bottom - clientY,
+    );
+    return smoothstep(0, Math.max(1, edgeRamp), edgeDistance);
   }
 
   function chooseStoryPath(story, target) {
