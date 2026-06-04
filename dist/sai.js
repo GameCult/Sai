@@ -1542,7 +1542,7 @@
       container.classList.add("sai-player-speaker");
       variables.hidden = !showVariables;
       stageState.controls.append(choices);
-      stageState.card.append(continueButton);
+      stageState.stage.append(continueButton);
       container.replaceChildren(status, stageState.stage, variables);
     } else {
       container.replaceChildren(
