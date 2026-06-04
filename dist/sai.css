@@ -617,6 +617,10 @@
   backdrop-filter: blur(16px);
 }
 
+.sai-speaker-stage.can-continue .sai-speaker-card {
+  padding-right: clamp(8.5rem, 13vw, 12rem);
+}
+
 .sai-speaker-card.is-entering {
   animation: saiSpeakerIn 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
@@ -724,6 +728,44 @@
   white-space: nowrap;
 }
 
+.sai-speaker-card > .sai-continue {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 7.5rem;
+  min-height: 2.7rem;
+  padding: 0.7rem 1rem;
+  border-color: rgba(255, 138, 42, 0.72);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(255, 138, 42, 0.28), rgba(255, 138, 42, 0.16)),
+    rgba(5, 8, 13, 0.88);
+  color: rgba(255, 244, 230, 1);
+  font-family: var(--sai-body-font);
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  box-shadow:
+    0 0 0 1px rgba(255, 138, 42, 0.22),
+    0 14px 34px rgba(0, 0, 0, 0.44),
+    0 0 28px rgba(255, 138, 42, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.sai-speaker-card > .sai-continue::after {
+  content: ">";
+  margin-left: 0.55rem;
+  color: rgba(255, 198, 120, 1);
+  font-family: var(--sai-title-font);
+  font-weight: 800;
+}
+
 .sai-speaker-controls .sai-choice:hover,
 .sai-speaker-controls .sai-choice:focus-visible,
 .sai-speaker-controls .sai-continue:hover,
@@ -805,6 +847,11 @@
     min-height: 128px;
   }
 
+  .sai-speaker-stage.can-continue .sai-speaker-card {
+    padding-right: 0;
+    padding-bottom: 3.7rem;
+  }
+
   .sai-speaker-body {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -826,6 +873,12 @@
   .sai-speaker-controls .sai-choice,
   .sai-speaker-controls .sai-continue {
     flex: 1 1 min(100%, 13rem);
+  }
+
+  .sai-speaker-card > .sai-continue {
+    right: 0.75rem;
+    bottom: 0.75rem;
+    min-width: 7rem;
   }
 }
 

@@ -1541,7 +1541,8 @@
     } else if (isSpeakerPanel) {
       container.classList.add("sai-player-speaker");
       variables.hidden = !showVariables;
-      stageState.controls.append(choices, continueButton);
+      stageState.controls.append(choices);
+      stageState.card.append(continueButton);
       container.replaceChildren(status, stageState.stage, variables);
     } else {
       container.replaceChildren(
