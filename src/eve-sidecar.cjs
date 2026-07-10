@@ -8,7 +8,7 @@ const SaiEve = require("./eve.js");
 
 const sessions = new Map();
 const pluginId = "sai.vn";
-const operations = ["describe", "open", "apply", "project"];
+const operations = ["describe", "validate", "open", "apply", "project", "jump"];
 
 readline.createInterface({ input: process.stdin }).on("line", (line) => {
   if (!line.trim()) return;
@@ -26,9 +26,21 @@ function dispatch(request) {
   if (request.pluginId !== pluginId) throw new Error(`Expected plugin ${pluginId}.`);
   if (!operations.includes(request.operation)) throw new Error(`Unsupported operation ${request.operation}.`);
   if (request.operation === "describe") return describe();
+  if (request.operation === "validate") return validate(request.input);
   if (request.operation === "open") return openSession(request.input);
   if (request.operation === "apply") return applyCommand(request.input);
+  if (request.operation === "jump") return applyCommand({ ...request.input, command: "story.jump" });
   return projectSession(request.input);
+}
+
+function validate(input) {
+  const owned = new Set(describe().componentKinds);
+  const requested = Array.isArray(input.componentKinds) ? input.componentKinds : [];
+  return {
+    acceptedComponentKinds: requested.filter((kind) => owned.has(kind)),
+    rejectedComponentKinds: requested.filter((kind) => !owned.has(kind)),
+    requiredCapabilities: describe().capabilities,
+  };
 }
 
 function describe() {
@@ -70,7 +82,16 @@ function applyCommand(input) {
     throw new Error(`Unsupported Sai command ${command}.`);
   }
   session.revision += 1;
-  return { ...snapshot(session), command, receiptSchema: "gamecult.eve.command_receipt.v1" };
+  return {
+    ...snapshot(session),
+    command,
+    commandEffects: {
+      "story.continue": "advance-story",
+      "story.choose": "choose-branch",
+      "story.jump": "jump-to-knot",
+    },
+    receiptSchema: "gamecult.eve.command_receipt.v1",
+  };
 }
 
 function projectSession(input) {

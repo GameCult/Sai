@@ -8,12 +8,15 @@
     "invocationModel": "executable-sidecar",
     "contract": "gamecult.eve.plugin_abi.v1",
     "transports": ["stdio"],
+    "authority": ["renderer-independent", "no-provider-state-mutation", "provider-accepts-or-denies-commands"],
     "sidecar": {
       "processKind": "long-running-daemon",
       "protocol": "stdio-ndjson",
       "requestSchema": "gamecult.eve.plugin_abi.request.v1",
       "responseSchema": "gamecult.eve.plugin_abi.response.v1",
-      "operations": ["describe", "open", "apply", "project"],
+      "operations": ["describe", "validate", "open", "apply", "project", "jump"],
+      "commandEnvelope": "gamecult.eve.command_invocation.v1",
+      "receiptSchema": "gamecult.eve.command_receipt.v1",
       "launch": { "command": "node", "artifact": "src/eve-sidecar.cjs" },
       "stateAuthority": "sai-sidecar-owns-story-session-provider-owns-command-acceptance"
     }

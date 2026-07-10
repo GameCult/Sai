@@ -13,14 +13,20 @@
     "invocationModel": "executable-sidecar",
     "contract": "gamecult.eve.plugin_abi.v1",
     "transports": ["stdio"],
+    "authority": ["renderer-independent", "no-provider-state-mutation", "provider-accepts-or-denies-commands"],
     "sidecar": {
       "processKind": "long-running-daemon",
       "protocol": "stdio-ndjson",
-      "operations": ["describe", "open", "apply", "project"],
+      "requestSchema": "gamecult.eve.plugin_abi.request.v1",
+      "responseSchema": "gamecult.eve.plugin_abi.response.v1",
+      "operations": ["describe", "validate", "open", "apply", "project", "jump"],
+      "commandEnvelope": "gamecult.eve.command_invocation.v1",
+      "receiptSchema": "gamecult.eve.command_receipt.v1",
       "stateAuthority": "sai-sidecar-owns-story-session-provider-owns-command-acceptance"
     }
   },
   "stateSchemas": ["sai.vn.story_session.v1", "sai.vn.visual_manifest.v1"],
+  "abiFixtures": ["plugins/sai-vn.plugin-abi-fixture.json"],
   "capabilities": {
     "requires": ["vn.stage", "story.choose", "story.continue", "story.jump"],
     "optionalPlugins": [

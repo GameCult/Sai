@@ -10,8 +10,21 @@
     {
       "operation": "describe",
       "expect": {
+        "pluginId": "sai.vn",
+        "componentKinds": ["vn.stage", "panel.dialogue", "text.dialogue", "rail.actions"],
+        "commands": ["story.continue", "story.choose", "story.jump"],
+        "capabilities": ["vn.stage", "story.choose", "story.continue", "story.jump"],
         "sessionAuthority": "sai-sidecar",
         "optionalPlugins": ["norn.graph", "tex.math"]
+      }
+    },
+    {
+      "operation": "validate",
+      "input": { "componentKinds": ["vn.stage", "panel.dialogue", "text.dialogue", "rail.actions", "combat.timeline"] },
+      "expect": {
+        "acceptedComponentKinds": ["vn.stage", "panel.dialogue", "text.dialogue", "rail.actions"],
+        "rejectedComponentKinds": ["combat.timeline"],
+        "requiredCapabilities": ["vn.stage", "story.choose", "story.continue", "story.jump"]
       }
     },
     {
@@ -29,7 +42,13 @@
       "expect": {
         "line": "Then the story should feel like it belongs here, not like a widget escaped from somewhere else.",
         "revision": 1,
-        "command": "story.choose"
+        "command": "story.choose",
+        "commandEffects": {
+          "story.continue": "advance-story",
+          "story.choose": "choose-branch",
+          "story.jump": "jump-to-knot"
+        },
+        "receiptSchema": "gamecult.eve.command_receipt.v1"
       }
     },
     {
@@ -43,8 +62,8 @@
       }
     },
     {
-      "operation": "apply",
-      "input": { "sessionId": "witness", "command": "story.jump", "targetPath": "gather" },
+      "operation": "jump",
+      "input": { "sessionId": "witness", "targetPath": "gather" },
       "expect": {
         "line": "Good. The brush moves. The scene answers.",
         "revision": 2,

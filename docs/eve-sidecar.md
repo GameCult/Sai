@@ -18,7 +18,10 @@ The retained operations are:
 
 - `open`: create or replace a named Ink session and advance it to its first line.
 - `apply`: apply `story.continue`, `story.choose`, or `story.jump` to that session.
+- `jump`: exercise a second retained transition without duplicating the ABI's
+  single `apply` conformance contract.
 - `project`: derive a Sai Eve surface from current session state.
+- `validate`: identify Sai-owned and foreign component kinds.
 - `describe`: report the sidecar's owned and optional capabilities.
 
 Run the owner-side conformance witness with:
