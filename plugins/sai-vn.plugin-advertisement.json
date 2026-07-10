@@ -1,0 +1,23 @@
+{
+  "schema": "gamecult.eve.plugin_advertisement.v1",
+  "pluginId": "sai.vn",
+  "ownerService": "sai",
+  "version": "0.1.0",
+  "manifestAddress": "file://plugins/sai-vn.plugin.json",
+  "runtime": {
+    "invocationModel": "executable-sidecar",
+    "contract": "gamecult.eve.plugin_abi.v1",
+    "transports": ["stdio"],
+    "sidecar": {
+      "processKind": "long-running-daemon",
+      "protocol": "stdio-ndjson",
+      "requestSchema": "gamecult.eve.plugin_abi.request.v1",
+      "responseSchema": "gamecult.eve.plugin_abi.response.v1",
+      "operations": ["describe", "open", "apply", "project"],
+      "launch": { "command": "node", "artifact": "src/eve-sidecar.cjs" },
+      "stateAuthority": "sai-sidecar-owns-story-session-provider-owns-command-acceptance"
+    }
+  },
+  "componentKinds": ["vn.stage", "panel.dialogue", "text.dialogue", "rail.actions"],
+  "commands": ["story.continue", "story.choose", "story.jump"]
+}

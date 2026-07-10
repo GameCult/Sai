@@ -8,6 +8,7 @@
     "dist",
     "src",
     "docs",
+    "plugins",
     "examples",
     "scripts",
     "README.md",
@@ -20,13 +21,19 @@
     "./eve.js": "./dist/eve.js",
     "./ink.js": "./dist/ink.js"
   },
+  "bin": {
+    "sai-eve-sidecar": "./src/eve-sidecar.cjs"
+  },
   "scripts": {
     "build": "node scripts/build.mjs",
     "check": "node scripts/check.mjs",
+    "check:eve-plugin": "powershell -ExecutionPolicy Bypass -File scripts/run-eve-plugin-witness.ps1",
     "compile:example": "inkjs-compiler examples/static-site/story.ink -o examples/static-site/story.ink.json"
   },
+  "dependencies": {
+    "inkjs": "^2.4.0"
+  },
   "devDependencies": {
-    "inkjs": "^2.4.0",
     "prettier": "^3.5.3"
   },
   "keywords": [

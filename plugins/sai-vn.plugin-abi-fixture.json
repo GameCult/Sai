@@ -1,0 +1,55 @@
+{
+  "schema": "gamecult.eve.plugin_abi_fixture.v1",
+  "fixtureId": "sai-vn-live-playback",
+  "pluginId": "sai.vn",
+  "ownerRepo": "Sai",
+  "contract": "gamecult.eve.plugin_abi.v1",
+  "requestSchema": "gamecult.eve.plugin_abi.request.v1",
+  "responseSchema": "gamecult.eve.plugin_abi.response.v1",
+  "operations": [
+    {
+      "operation": "describe",
+      "expect": {
+        "sessionAuthority": "sai-sidecar",
+        "optionalPlugins": ["norn.graph", "tex.math"]
+      }
+    },
+    {
+      "operation": "open",
+      "input": { "sessionId": "witness", "storyId": "sai-example", "storyPath": "examples/static-site/story.ink.json" },
+      "expect": {
+        "sessionId": "witness",
+        "line": "Ink is not alive by itself. A page gives it a body.",
+        "revision": 0
+      }
+    },
+    {
+      "operation": "apply",
+      "input": { "sessionId": "witness", "command": "story.choose", "index": 0 },
+      "expect": {
+        "line": "Then the story should feel like it belongs here, not like a widget escaped from somewhere else.",
+        "revision": 1,
+        "command": "story.choose"
+      }
+    },
+    {
+      "operation": "project",
+      "input": { "sessionId": "witness", "providerId": "sai.witness" },
+      "expect": {
+        "projectionKind": "semantic-surface",
+        "delegatedPlugins": ["norn.graph", "tex.math"],
+        "sessionId": "witness",
+        "revision": 1
+      }
+    },
+    {
+      "operation": "apply",
+      "input": { "sessionId": "witness", "command": "story.jump", "targetPath": "gather" },
+      "expect": {
+        "line": "Good. The brush moves. The scene answers.",
+        "revision": 2,
+        "command": "story.jump"
+      }
+    }
+  ]
+}

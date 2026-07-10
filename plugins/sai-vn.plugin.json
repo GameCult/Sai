@@ -1,0 +1,31 @@
+{
+  "schema": "gamecult.eve.plugin.v1",
+  "pluginId": "sai.vn",
+  "title": "Sai Visual Novel",
+  "owner": "Sai",
+  "componentKinds": ["vn.stage", "panel.dialogue", "text.dialogue", "rail.actions"],
+  "commands": [
+    { "command": "story.continue", "schema": "sai.vn.story_command.v1", "effect": "advance-story" },
+    { "command": "story.choose", "schema": "sai.vn.story_command.v1", "effect": "choose-branch" },
+    { "command": "story.jump", "schema": "sai.vn.story_command.v1", "effect": "jump-to-knot" }
+  ],
+  "runtime": {
+    "invocationModel": "executable-sidecar",
+    "contract": "gamecult.eve.plugin_abi.v1",
+    "transports": ["stdio"],
+    "sidecar": {
+      "processKind": "long-running-daemon",
+      "protocol": "stdio-ndjson",
+      "operations": ["describe", "open", "apply", "project"],
+      "stateAuthority": "sai-sidecar-owns-story-session-provider-owns-command-acceptance"
+    }
+  },
+  "stateSchemas": ["sai.vn.story_session.v1", "sai.vn.visual_manifest.v1"],
+  "capabilities": {
+    "requires": ["vn.stage", "story.choose", "story.continue", "story.jump"],
+    "optionalPlugins": [
+      { "pluginId": "norn.graph", "relationship": "optional-nested-composition" },
+      { "pluginId": "tex.math", "relationship": "optional-nested-composition" }
+    ]
+  }
+}

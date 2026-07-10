@@ -8,6 +8,10 @@ const required = [
   "dist/eve.js",
   "examples/static-site/index.html",
   "docs/manifest.md",
+  "plugins/sai-vn.plugin.json",
+  "plugins/sai-vn.plugin-advertisement.json",
+  "plugins/sai-vn.plugin-abi-fixture.json",
+  "src/eve-sidecar.cjs",
 ];
 
 for (const file of required) {

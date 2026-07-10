@@ -154,6 +154,9 @@ future renderers can consume the same tree and send back `story.*` or
 
 See [docs/eve.md](docs/eve.md).
 
+Sai also publishes a retained Ink playback sidecar for runtime-independent Eve
+clients. See [docs/eve-sidecar.md](docs/eve-sidecar.md).
+
 ## Development
 
 ```powershell
