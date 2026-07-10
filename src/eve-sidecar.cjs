@@ -10,16 +10,18 @@ const sessions = new Map();
 const pluginId = "sai.vn";
 const operations = ["describe", "validate", "open", "apply", "project", "jump"];
 
-readline.createInterface({ input: process.stdin }).on("line", (line) => {
-  if (!line.trim()) return;
-  let request;
-  try {
-    request = JSON.parse(line.replace(/^\uFEFF/, ""));
-    respond(request, dispatch(request));
-  } catch (error) {
-    respond(request, {}, "rejected", error.message);
-  }
-});
+if (require.main === module) {
+  readline.createInterface({ input: process.stdin }).on("line", (line) => {
+    if (!line.trim()) return;
+    let request;
+    try {
+      request = JSON.parse(line.replace(/^\uFEFF/, ""));
+      respond(request, dispatch(request));
+    } catch (error) {
+      respond(request, {}, "rejected", error.message);
+    }
+  });
+}
 
 function dispatch(request) {
   if (request?.schema !== "gamecult.eve.plugin_abi.request.v1") throw new Error("Unsupported request schema.");
@@ -156,7 +158,11 @@ function requiredString(value, field) {
 function parseJson(value) { return JSON.parse(value.replace(/^\uFEFF/, "")); }
 
 function respond(request, output, status = "accepted", message) {
-  process.stdout.write(`${JSON.stringify({
+  process.stdout.write(`${JSON.stringify(createResponse(request, output, status, message))}\n`);
+}
+
+function createResponse(request, output, status = "accepted", message) {
+  return {
     schema: "gamecult.eve.plugin_abi.response.v1",
     pluginId,
     operation: request?.operation || "unknown",
@@ -164,5 +170,7 @@ function respond(request, output, status = "accepted", message) {
     status,
     output,
     ...(message ? { diagnostics: [{ message }] } : {}),
-  })}\n`);
+  };
 }
+
+module.exports = { createResponse, dispatch, operations, pluginId };

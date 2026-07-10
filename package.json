@@ -22,15 +22,18 @@
     "./ink.js": "./dist/ink.js"
   },
   "bin": {
-    "sai-eve-sidecar": "./src/eve-sidecar.cjs"
+    "sai-eve-sidecar": "./src/eve-cultnet-sidecar.cjs",
+    "sai-eve-stdio": "./src/eve-sidecar.cjs"
   },
   "scripts": {
     "build": "node scripts/build.mjs",
     "check": "node scripts/check.mjs",
-    "check:eve-plugin": "powershell -ExecutionPolicy Bypass -File scripts/run-eve-plugin-witness.ps1",
+    "check:eve-plugin": "node scripts/run-eve-cultnet-witness.mjs",
     "compile:example": "inkjs-compiler examples/static-site/story.ink -o examples/static-site/story.ink.json"
   },
   "dependencies": {
+    "@msgpack/msgpack": "^3.1.3",
+    "cultnet-ts": "file:../CultLib/packages/cultnet-ts",
     "inkjs": "^2.4.0"
   },
   "devDependencies": {

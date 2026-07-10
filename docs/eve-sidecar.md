@@ -10,9 +10,13 @@ behalf, or execute Norn or TeX semantics. It advertises `norn.graph` and
 
 ## Transport
 
-`src/eve-sidecar.cjs` is a long-running NDJSON process. Each input line is a
-`gamecult.eve.plugin_abi.request.v1`; each output line is the correlated
-`gamecult.eve.plugin_abi.response.v1`.
+`src/eve-cultnet-sidecar.cjs` is the runtime-independent service entry point.
+It advertises a CultNet RUDP endpoint and accepts `cultnet.operation_request.v0`
+envelopes whose MessagePack payload is a `gamecult.eve.plugin_abi.request.v1`.
+Responses preserve both the CultNet message correlation and Eve ABI request ID.
+
+`src/eve-sidecar.cjs` exposes the same handler through newline-delimited JSON
+for local debugging. It is not the deployment transport.
 
 The retained operations are:
 
@@ -26,6 +30,9 @@ The retained operations are:
 
 Run the owner-side conformance witness with:
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/run-eve-plugin-witness.ps1
+```sh
+npm run check:eve-plugin
 ```
+
+The witness starts the real CultNet service, invokes every fixture operation
+through RUDP, and writes `artifacts/eve-plugin/runtime-witness.json`.
