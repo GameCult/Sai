@@ -9,6 +9,7 @@
   "operations": [
     {
       "operation": "describe",
+      "input": {},
       "expect": {
         "pluginId": "sai.vn",
         "componentKinds": ["vn.stage", "panel.dialogue", "text.dialogue", "rail.actions"],
@@ -56,6 +57,7 @@
       "input": { "sessionId": "witness", "providerId": "sai.witness" },
       "expect": {
         "projectionKind": "semantic-surface",
+        "ownedComponentKinds": ["vn.stage", "panel.dialogue", "text.dialogue", "rail.actions"],
         "delegatedPlugins": ["norn.graph", "tex.math"],
         "sessionId": "witness",
         "revision": 1

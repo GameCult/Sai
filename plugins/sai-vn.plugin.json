@@ -26,12 +26,15 @@
     }
   },
   "stateSchemas": ["sai.vn.story_session.v1", "sai.vn.visual_manifest.v1"],
+  "fixtures": [
+    { "fixtureId": "sai-vn", "schema": "gamecult.eve.surface.v1", "path": "examples/static-site/story.ink.json" }
+  ],
   "abiFixtures": ["plugins/sai-vn.plugin-abi-fixture.json"],
   "capabilities": {
     "requires": ["vn.stage", "story.choose", "story.continue", "story.jump"],
     "optionalPlugins": [
-      { "pluginId": "norn.graph", "relationship": "optional-nested-composition" },
-      { "pluginId": "tex.math", "relationship": "optional-nested-composition" }
+      { "pluginId": "norn.graph", "relationship": "optional-nested-composition", "capabilities": ["embed.norn", "graph.node.activate"] },
+      { "pluginId": "tex.math", "relationship": "optional-nested-composition", "capabilities": ["embed.tex", "tex.inline", "tex.block"] }
     ]
   }
 }

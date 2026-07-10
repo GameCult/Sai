@@ -21,6 +21,8 @@
       "stateAuthority": "sai-sidecar-owns-story-session-provider-owns-command-acceptance"
     }
   },
+  "schemas": ["sai.vn.story_session.v1", "sai.vn.visual_manifest.v1"],
   "componentKinds": ["vn.stage", "panel.dialogue", "text.dialogue", "rail.actions"],
-  "commands": ["story.continue", "story.choose", "story.jump"]
+  "commands": ["story.continue", "story.choose", "story.jump"],
+  "fixtures": ["sai-vn"]
 }
