@@ -11,6 +11,8 @@ home at midnight.
 
 The name is the pitch: ink that becomes a living scene.
 
+**Status:** `@gamecult/sai` 0.1.0. Live: the transcript (default), visual-novel and cinematic formats, the visual manifest, the portable Eve surface module (`src/eve.js`) and the Eve playback sidecars (`src/eve-cultnet-sidecar.cjs`, `src/eve-sidecar.cjs`). Not planned here: Ink authoring or compilation, Eve transport, and a full game loop (see Boundary). Entry points: `dist/sai.js` and `dist/sai.css` for pages, `src/sai.js` for source, `docs/manifest.md` and `docs/eve.md` for the contracts, `examples/static-site/` for a working page, and `npm run build` then `npm run check` to verify.
+
 ## Why Sai Exists
 
 Most Ink web players answer: "Can I play this story in a browser?"
